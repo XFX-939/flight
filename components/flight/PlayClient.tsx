@@ -34,6 +34,7 @@ import { FlightScene } from "@/components/flight/FlightScene";
 import { DesktopFlightControls } from "@/components/flight/DesktopFlightControls";
 import { MobileFlightControls } from "@/components/flight/MobileFlightControls";
 import { PauseMenu } from "@/components/flight/PauseMenu";
+import { PreflightTutorialModal } from "@/components/flight/PreflightTutorialModal";
 
 const viewModes: ViewMode[] = ["thirdPerson", "cockpit", "nose", "free"];
 
@@ -93,14 +94,16 @@ export function PlayClient() {
   const [paused, setPaused] = useState(false);
   const [result, setResult] = useState<FlightScore | false>(false);
   const [ready, setReady] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(true);
 
   const controlsRef = useRef<FlightControlInput>({ ...defaultControls });
   const finishLockRef = useRef(false);
   const { stateRef, metricsRef, resetFlightState } = useFlightState(aircraft, airport, mission);
   const [displayState, setDisplayState] = useState<FlightRuntimeState>(() => cloneState(stateRef.current));
 
-  const controlsEnabled = ready && !paused && result === false && !displayState.crashed && !displayState.missionCompleted;
-  const active = ready && !paused && result === false;
+  const controlsEnabled =
+    ready && !showTutorial && !paused && result === false && !displayState.crashed && !displayState.missionCompleted;
+  const active = ready && !showTutorial && !paused && result === false;
 
   useEffect(() => {
     const missionId = queryMission.length > 0 ? queryMission : getSelectedMissionId();
@@ -124,6 +127,7 @@ export function PlayClient() {
     controlsRef.current = { ...defaultControls };
     setPaused(false);
     setResult(false);
+    setShowTutorial(true);
     finishLockRef.current = false;
     setDisplayState(cloneState(stateRef.current));
   }, [resetFlightState, stateRef]);
@@ -214,6 +218,7 @@ export function PlayClient() {
     setDisplayState(cloneState(stateRef.current));
     setResult(false);
     finishLockRef.current = false;
+    setShowTutorial(true);
     setPaused(false);
   }, [resetFlightState, stateRef]);
 
@@ -290,6 +295,10 @@ export function PlayClient() {
         onRestart={restartFlight}
         onQuality={handleQuality}
       />
+
+      {ready && showTutorial && result === false ? (
+        <PreflightTutorialModal aircraft={aircraft} mission={mission} onStart={() => setShowTutorial(false)} />
+      ) : null}
 
       {result !== false ? (
         <FlightResultModal score={result} aircraft={aircraft} airport={airport} mission={mission} onRestart={restartFlight} />

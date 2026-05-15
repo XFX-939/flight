@@ -48,35 +48,42 @@ export function Runway({ airport }: RunwayProps) {
         <planeGeometry args={[RUNWAY_WIDTH, length]} />
         <meshStandardMaterial color="#1f2937" roughness={0.82} />
       </mesh>
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.018, -length / 2 + 34]}>
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.045, -length / 2 + 34]}>
         <planeGeometry args={[RUNWAY_WIDTH - 8, 18]} />
-        <meshStandardMaterial color="#e5e7eb" />
+        <meshStandardMaterial color="#e5e7eb" polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
       </mesh>
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.018, length / 2 - 34]}>
+      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.045, length / 2 - 34]}>
         <planeGeometry args={[RUNWAY_WIDTH - 8, 18]} />
-        <meshStandardMaterial color="#e5e7eb" />
+        <meshStandardMaterial color="#e5e7eb" polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
       </mesh>
       {stripes.map((z) => (
-        <mesh key={z} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, z]}>
+        <mesh key={z} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.052, z]}>
           <planeGeometry args={[2.2, 42]} />
-          <meshStandardMaterial color="#f8fafc" emissive="#dbeafe" emissiveIntensity={0.08} />
+          <meshStandardMaterial
+            color="#f8fafc"
+            emissive="#dbeafe"
+            emissiveIntensity={0.08}
+            polygonOffset
+            polygonOffsetFactor={-3}
+            polygonOffsetUnits={-3}
+          />
         </mesh>
       ))}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-RUNWAY_WIDTH / 2 + 2.2, 0.021, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-RUNWAY_WIDTH / 2 + 2.2, 0.055, 0]}>
         <planeGeometry args={[1.5, length]} />
-        <meshStandardMaterial color="#f8fafc" />
+        <meshStandardMaterial color="#f8fafc" polygonOffset polygonOffsetFactor={-3} polygonOffsetUnits={-3} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[RUNWAY_WIDTH / 2 - 2.2, 0.021, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[RUNWAY_WIDTH / 2 - 2.2, 0.055, 0]}>
         <planeGeometry args={[1.5, length]} />
-        <meshStandardMaterial color="#f8fafc" />
+        <meshStandardMaterial color="#f8fafc" polygonOffset polygonOffsetFactor={-3} polygonOffsetUnits={-3} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.024, -length / 2 + 90]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, -length / 2 + 90]}>
         <planeGeometry args={[28, 15]} />
-        <meshBasicMaterial map={numberTexture} transparent />
+        <meshBasicMaterial map={numberTexture} transparent polygonOffset polygonOffsetFactor={-4} polygonOffsetUnits={-4} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, Math.PI]} position={[0, 0.024, length / 2 - 90]}>
+      <mesh rotation={[-Math.PI / 2, 0, Math.PI]} position={[0, 0.06, length / 2 - 90]}>
         <planeGeometry args={[28, 15]} />
-        <meshBasicMaterial map={numberTexture} transparent />
+        <meshBasicMaterial map={numberTexture} transparent polygonOffset polygonOffsetFactor={-4} polygonOffsetUnits={-4} />
       </mesh>
       {lights.map((z) => (
         <group key={z}>
