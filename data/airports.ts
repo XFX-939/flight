@@ -16,7 +16,7 @@ export const airports: Airport[] = [
     cityProfile: {
       cityName: "Felix Bay",
       downtownName: "Felix Downtown",
-      center: { x: 520, z: 3100 },
+      center: { x: 740, z: 4300 },
       density: "medium",
       water: "bay",
       landmarkColor: "#38bdf8"
@@ -37,7 +37,7 @@ export const airports: Airport[] = [
     cityProfile: {
       cityName: "Bay City",
       downtownName: "Harbor Core",
-      center: { x: -620, z: 2950 },
+      center: { x: -900, z: 4400 },
       density: "medium",
       water: "coast",
       landmarkColor: "#22d3ee"
@@ -58,7 +58,7 @@ export const airports: Airport[] = [
     cityProfile: {
       cityName: "Mountain Valley",
       downtownName: "Valley Town",
-      center: { x: -460, z: 2200 },
+      center: { x: -620, z: 3200 },
       density: "low",
       water: "river",
       landmarkColor: "#f59e0b"
@@ -79,7 +79,7 @@ export const airports: Airport[] = [
     cityProfile: {
       cityName: "Shanghai",
       downtownName: "Lujiazui Skyline",
-      center: { x: 760, z: 3800 },
+      center: { x: 1120, z: 6200 },
       density: "high",
       water: "river",
       landmarkColor: "#22d3ee"
@@ -100,7 +100,7 @@ export const airports: Airport[] = [
     cityProfile: {
       cityName: "New York",
       downtownName: "Manhattan Core",
-      center: { x: -820, z: 3900 },
+      center: { x: -1240, z: 6500 },
       density: "high",
       water: "bay",
       landmarkColor: "#38bdf8"
@@ -121,7 +121,7 @@ export const airports: Airport[] = [
     cityProfile: {
       cityName: "Tokyo",
       downtownName: "Tokyo Bay Core",
-      center: { x: 620, z: 3450 },
+      center: { x: 940, z: 5700 },
       density: "high",
       water: "coast",
       landmarkColor: "#67e8f9"

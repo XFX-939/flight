@@ -99,8 +99,8 @@ export function getAirportGameplayProfile(airport: Airport, aircraft: Aircraft):
     0,
     1
   );
-  const fogFar = clamp(finite(airport.visibility, 10) * 650, 1700, 8200);
-  const fogNear = clamp(fogFar * 0.16, 420, 1450);
+  const fogFar = clamp(finite(airport.visibility, 10) * 920, 2400, 12500);
+  const fogNear = clamp(fogFar * 0.16, 520, 1900);
   const windText =
     wind.crosswindKnots >= 1
       ? `${safeRound(wind.crosswindKnots)} kt ${wind.crosswindFrom === "right" ? "右侧风" : wind.crosswindFrom === "left" ? "左侧风" : "侧风"}`

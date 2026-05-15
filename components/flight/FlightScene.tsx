@@ -70,7 +70,7 @@ function FlightSceneComponent({
   return (
     <Canvas
       className="h-full w-full bg-[#07111F]"
-      camera={{ position: [0, 18, -54], fov: 62, near: 1, far: 9000 }}
+      camera={{ position: [0, 18, -54], fov: 62, near: 1, far: 18000 }}
       dpr={dpr}
       shadows={shadowsEnabled ? "percentage" : false}
       performance={{ min: 0.65 }}

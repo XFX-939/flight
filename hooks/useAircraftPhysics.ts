@@ -258,10 +258,16 @@ export function useAircraftPhysics({
     state.runwayOffset = state.position.x;
     state.runwayDistance = Math.abs(state.position.z);
     state.flightTime = Math.max(0, (performance.now() - metrics.startedAt) / 1000);
+    const cityCenter = airport.cityProfile?.center;
+    const downtownDistance = cityCenter
+      ? Math.hypot(cityCenter.x - state.position.x, cityCenter.z - state.position.z)
+      : Math.hypot(state.position.x, state.position.z);
     state.distanceToTarget =
       mission.type === "route-challenge"
         ? Math.hypot(ROUTE_TARGET.x - state.position.x, ROUTE_TARGET.z - state.position.z)
-        : Math.hypot(state.position.x, state.position.z);
+        : mission.type === "free-flight"
+          ? downtownDistance
+          : Math.hypot(state.position.x, state.position.z);
 
     const runwayRemaining = getRunwayRemainingMeters(airport, state.position.z);
     const offRunway = state.onGround && Math.abs(state.position.x) > RUNWAY_WIDTH / 2 && state.airspeed > 28;
@@ -286,7 +292,7 @@ export function useAircraftPhysics({
       state.warning = "CROSSWIND";
     } else if (airport.visibility < 7 && !state.onGround && state.altitude < 1200) {
       state.warning = "LOW VIS";
-    } else if (Math.abs(state.runwayOffset) > 36 && state.altitude < 800) {
+    } else if (mission.type !== "free-flight" && Math.abs(state.runwayOffset) > 36 && state.altitude < 800) {
       state.warning = "跑道偏离";
     } else if (!state.gearDown && state.altitude < 700 && state.airspeed < aircraft.takeoffSpeed * 1.8) {
       state.warning = "GEAR";
@@ -335,7 +341,16 @@ export function useAircraftPhysics({
     }
 
     if (mission.type === "free-flight") {
-      state.missionStatus = state.stalled ? "失速恢复：降低机头并增加速度" : "自由飞行中，可随时结束";
+      const downtownName = airport.cityProfile?.downtownName ?? "市中心";
+      state.missionStatus = state.stalled
+        ? "失速恢复：降低机头并增加速度"
+        : state.onGround
+          ? `自由飞行：起飞后飞向 ${downtownName}`
+          : downtownDistance < 850
+            ? `已抵达 ${downtownName} 上空，可盘旋观光或继续远航`
+            : state.altitude < 900
+              ? `先爬升到 1500 ft 以上，再飞向 ${downtownName}`
+              : `飞向 ${downtownName}，距离约 ${Math.max(0.1, downtownDistance / 1000).toFixed(1)} km`;
     }
 
     if (mission.type === "route-challenge") {

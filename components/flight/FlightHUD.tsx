@@ -145,7 +145,7 @@ export function FlightHUD({ state, aircraft, airport, mission, viewMode, onPause
         {state.flaps === 0 && state.altitude < 900 && !state.onGround ? (
           <div className="hud-panel rounded-lg px-3 py-1.5 text-xs font-black text-amber-300 sm:px-4 sm:py-2 sm:text-sm">FLAPS</div>
         ) : null}
-        {Math.abs(state.runwayOffset) > 28 && state.altitude < 1200 ? (
+        {mission.type !== "free-flight" && Math.abs(state.runwayOffset) > 28 && state.altitude < 1200 ? (
           <div className="hud-panel rounded-lg px-3 py-1.5 text-xs font-black text-cyan-100 sm:px-4 sm:py-2 sm:text-sm">
             CENTERLINE {safeRound(state.runwayOffset)} m
           </div>

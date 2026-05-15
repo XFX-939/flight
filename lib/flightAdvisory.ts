@@ -62,7 +62,16 @@ export function getFlightAdvisories(
   const isLandingMission = mission.type === "landing-training";
   const isTakeoffMission = mission.type === "takeoff-training";
   const isRouteMission = mission.type === "route-challenge";
+  const isFreeFlight = mission.type === "free-flight";
   const airborne = !state.onGround && altitude > 8;
+  const cityCenter = airport.cityProfile?.center;
+  const cityDistance = cityCenter
+    ? Math.hypot(cityCenter.x - state.position.x, cityCenter.z - state.position.z)
+    : 0;
+  const cityHeading = cityCenter
+    ? normalizeHeading(airport.runwayHeading + (Math.atan2(cityCenter.x - state.position.x, cityCenter.z - state.position.z) * 180) / Math.PI)
+    : targetHeading;
+  const cityHeadingError = signedHeadingError(cityHeading, finite(state.heading));
 
   if (state.crashed || state.warning === "CRASH") {
     addAdvisory(advisories, {
@@ -216,14 +225,32 @@ export function getFlightAdvisories(
         id: "speed-high",
         severity: "warning",
         title: "速度过高",
-        message: isLandingMission ? "收油门，放襟翼，保持稳定下滑。" : "略收油门，减小俯冲角，回到任务目标速度。",
+        message: isLandingMission
+          ? "收油门，放襟翼，保持稳定下滑。"
+          : isFreeFlight
+            ? "略收油门，减小俯冲角，回到舒适巡航速度。"
+            : "略收油门，减小俯冲角，回到任务目标速度。",
         value: `${safeRound(airspeed)} kt`,
         priority: 17
       });
     }
   }
 
-  if ((!state.onGround || airspeed > 35) && headingErrorAbs > (isLandingMission ? 5 : 10)) {
+  if (isFreeFlight && airborne && cityCenter) {
+    const correction = cityHeadingError > 0 ? "向右" : "向左";
+    addAdvisory(advisories, {
+      id: "city-free-flight",
+      severity: cityDistance < 850 ? "success" : "info",
+      title: cityDistance < 850 ? `${airport.cityProfile?.downtownName ?? "市中心"} 上空` : "飞向城市上空",
+      message: cityDistance < 850
+        ? "已经到达城市核心区，可以小坡度盘旋、观景，或继续沿海岸/河道远航。"
+        : `${correction}小幅转向 ${safeRound(cityHeading).toString().padStart(3, "0")}°，前方是 ${airport.cityProfile?.downtownName ?? "市中心"}。`,
+      value: `${Math.max(0.1, cityDistance / 1000).toFixed(1)} km`,
+      priority: cityDistance < 850 ? 23 : 28
+    });
+  }
+
+  if (!isFreeFlight && (!state.onGround || airspeed > 35) && headingErrorAbs > (isLandingMission ? 5 : 10)) {
     const correction = headingError > 0 ? "向右" : "向左";
     const driftSide = headingError > 0 ? "偏左" : "偏右";
     addAdvisory(advisories, {
@@ -294,7 +321,7 @@ export function getFlightAdvisories(
     });
   }
 
-  if ((!state.onGround || airspeed > 30) && altitude < (isLandingMission ? 1800 : 1200) && runwayOffsetAbs > (isLandingMission ? 12 : 28)) {
+  if ((!isFreeFlight || state.onGround) && (!state.onGround || airspeed > 30) && altitude < (isLandingMission ? 1800 : 1200) && runwayOffsetAbs > (isLandingMission ? 12 : 28)) {
     const side = runwayOffset > 0 ? "偏右" : "偏左";
     const correction = runwayOffset > 0 ? "向左" : "向右";
     addAdvisory(advisories, {
@@ -314,7 +341,9 @@ export function getFlightAdvisories(
       title: state.onGround ? "准备起飞" : "飞行稳定",
       message: state.onGround
         ? `当前油门 ${throttlePercent}%，保持跑道方向并平稳加速。`
-        : "姿态、速度和航向都在可控范围内，保持小幅修正。",
+        : isFreeFlight
+          ? "姿态和速度稳定，可以继续飞向城市、沿水面巡航或自由盘旋。"
+          : "姿态、速度和航向都在可控范围内，保持小幅修正。",
       value: state.onGround ? `${throttlePercent}%` : "STABLE",
       priority: 99
     });

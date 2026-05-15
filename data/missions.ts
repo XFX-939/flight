@@ -49,12 +49,12 @@ export const missions: Mission[] = [
     name: "Free Flight",
     type: "free-flight",
     description:
-      "自由探索云层、城市和海湾，随时结束并生成飞行摘要。",
+      "从跑道起飞后自由飞向城市核心区，在海湾、河道、天际线和地标上空巡航。",
     aircraftAllowed: aircraft.map((item) => item.id),
     airportId: "felix-international",
-    targetAltitude: 2500,
+    targetAltitude: 3200,
     targetHeading: 0,
-    targetSpeed: 120,
+    targetSpeed: 135,
     scoringWeights: baseWeights
   },
   {

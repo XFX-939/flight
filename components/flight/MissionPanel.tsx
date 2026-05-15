@@ -43,7 +43,7 @@ export function MissionPanel({ mission, aircraft, airport, state, onEndFlight }:
           <strong>{mission.targetSpeed} kt</strong>
         </div>
         <div className="flex items-center justify-between rounded-lg bg-slate-950/45 px-3 py-2">
-          <span className="text-slate-400">目标距离</span>
+          <span className="text-slate-400">{mission.type === "free-flight" ? "城市距离" : "目标距离"}</span>
           <strong>{safeRound(state.distanceToTarget)} m</strong>
         </div>
       </div>
