@@ -40,7 +40,7 @@ export default function LogbookPage() {
                 <div>
                   <h3 className="text-lg font-black text-slate-50">{record.missionName}</h3>
                   <p className="mt-1 text-sm text-slate-400">
-                    {record.aircraftName} · {record.airportName} · {new Date(record.createdAt).toLocaleString()}
+                    {record.playerName} · {record.aircraftName} · {record.airportName} · {new Date(record.createdAt).toLocaleString()}
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">

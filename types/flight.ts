@@ -25,6 +25,18 @@ export type Vector3State = {
   z: number;
 };
 
+export type AirportCityProfile = {
+  cityName: string;
+  downtownName: string;
+  center: {
+    x: number;
+    z: number;
+  };
+  density: "low" | "medium" | "high";
+  water: "bay" | "coast" | "river" | "none";
+  landmarkColor: string;
+};
+
 export type Aircraft = {
   id: string;
   name: string;
@@ -57,6 +69,7 @@ export type Airport = {
   windSpeed: number;
   visibility: number;
   description: string;
+  cityProfile?: AirportCityProfile;
 };
 
 export type ScoringWeights = {

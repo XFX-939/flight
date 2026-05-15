@@ -16,9 +16,9 @@ export default function AirportsPage() {
     <main className="page-shell py-12">
       <div className="max-w-3xl">
         <div className="section-kicker">Airports</div>
-        <h1 className="section-title mt-2">机场与跑道</h1>
+        <h1 className="section-title mt-2">机场、跑道与城市地图</h1>
         <p className="mt-3 text-slate-400">
-          选择机场会改变跑道长度、风况、地形复杂度和任务初始条件。
+          选择机场会改变跑道长度、风况、地形复杂度和起飞后的城市天际线。
         </p>
       </div>
       <div className="mt-8 grid gap-5 lg:grid-cols-3">

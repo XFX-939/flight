@@ -13,7 +13,7 @@ const qualityOptions: { value: QualitySetting; label: string; description: strin
 
 export default function SettingsPage() {
   const [quality, setQuality] = useState<QualitySetting>("auto");
-  const [name, setName] = useState("Felix Pilot");
+  const [name, setName] = useState("");
 
   useEffect(() => {
     setQuality(getQualitySetting());
@@ -27,7 +27,9 @@ export default function SettingsPage() {
 
   const handleName = (value: string) => {
     setName(value);
-    setPlayerName(value);
+    if (value.trim().length > 0) {
+      setPlayerName(value);
+    }
   };
 
   return (
@@ -41,14 +43,16 @@ export default function SettingsPage() {
       <div className="mt-8 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
         <section className="hud-panel rounded-lg p-5">
           <h2 className="font-black text-slate-50">飞行员</h2>
-          <label className="mt-4 block text-sm text-slate-400" htmlFor="pilot-name">排行榜名称</label>
+          <label className="mt-4 block text-sm text-slate-400" htmlFor="pilot-name">机长名称</label>
           <input
             id="pilot-name"
             value={name}
             onChange={(event) => handleName(event.target.value)}
             className="mt-2 min-h-12 w-full rounded-lg border border-sky-300/20 bg-slate-950 px-3 text-slate-100"
+            placeholder="例如：Felix"
             maxLength={24}
           />
+          <p className="mt-2 text-xs text-slate-500">飞行记录会显示为“XX机长”。</p>
         </section>
 
         <section className="hud-panel rounded-lg p-5">

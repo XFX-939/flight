@@ -1,18 +1,38 @@
 "use client";
 
-import { ArrowUp, Gamepad2, Gauge, MousePointer2, PlaneTakeoff, Smartphone } from "lucide-react";
+import { ArrowUp, Gamepad2, Gauge, MousePointer2, PlaneTakeoff, Smartphone, UserRound } from "lucide-react";
 import type { Aircraft, Mission } from "@/types/flight";
+import { normalizePlayerName } from "@/lib/flightStorage";
 
 type PreflightTutorialModalProps = {
   aircraft: Aircraft;
   mission: Mission;
-  onStart: () => void;
+  captainName: string;
+  onCaptainNameChange: (value: string) => void;
+  onStart: (captainName: string) => void;
 };
 
-export function PreflightTutorialModal({ aircraft, mission, onStart }: PreflightTutorialModalProps) {
+export function PreflightTutorialModal({
+  aircraft,
+  mission,
+  captainName,
+  onCaptainNameChange,
+  onStart
+}: PreflightTutorialModalProps) {
+  const canStart = captainName.trim().length > 0;
+  const captainLabel = canStart ? normalizePlayerName(captainName) : "请输入机长名";
+
   return (
     <div className="absolute inset-0 z-50 grid place-items-center bg-slate-950/72 p-4 backdrop-blur-sm">
-      <div className="hud-panel w-full max-w-3xl rounded-lg p-5">
+      <form
+        className="hud-panel w-full max-w-3xl rounded-lg p-5"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (canStart) {
+            onStart(captainName);
+          }
+        }}
+      >
         <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
           <div>
             <div className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Preflight Briefing</div>
@@ -23,6 +43,28 @@ export function PreflightTutorialModal({ aircraft, mission, onStart }: Preflight
           </div>
           <div className="rounded-lg border border-cyan-300/25 bg-cyan-300/10 px-4 py-3 text-sm font-black text-cyan-100">
             起飞速度 {aircraft.takeoffSpeed} kt
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-lg border border-cyan-300/15 bg-slate-950/45 p-4">
+          <label htmlFor="captain-name" className="flex items-center gap-2 text-sm font-black text-slate-50">
+            <UserRound className="h-4 w-4 text-cyan-300" />
+            起飞前确认机长名
+          </label>
+          <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+            <input
+              id="captain-name"
+              value={captainName}
+              onChange={(event) => onCaptainNameChange(event.target.value)}
+              className="min-h-12 rounded-lg border border-sky-300/20 bg-slate-950 px-3 text-slate-100 outline-none transition focus:border-cyan-300/70"
+              maxLength={18}
+              placeholder="例如：Felix"
+              autoComplete="nickname"
+              autoFocus
+            />
+            <div className="rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm font-black text-cyan-100">
+              {captainLabel}
+            </div>
           </div>
         </div>
 
@@ -73,11 +115,11 @@ export function PreflightTutorialModal({ aircraft, mission, onStart }: Preflight
           </div>
         </div>
 
-        <button type="button" className="button-primary mt-6 w-full" onClick={onStart}>
+        <button type="submit" className="button-primary mt-6 w-full disabled:cursor-not-allowed disabled:opacity-45" disabled={!canStart}>
           <Gamepad2 className="h-5 w-5" />
-          我知道了，开始滑跑
+          {canStart ? `${captainLabel}，开始滑跑` : "输入机长名后开始滑跑"}
         </button>
-      </div>
+      </form>
     </div>
   );
 }

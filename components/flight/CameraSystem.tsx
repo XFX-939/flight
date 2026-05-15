@@ -15,36 +15,44 @@ export function CameraSystem({ stateRef, viewMode }: CameraSystemProps) {
   const targetRef = useRef(new Vector3());
   const desiredRef = useRef(new Vector3());
   const lookAtRef = useRef(new Vector3());
+  const forwardRef = useRef(new Vector3());
+  const rightRef = useRef(new Vector3());
 
   useFrame(({ camera, clock }, delta) => {
     const state = stateRef.current;
     const yaw = state.yaw;
-    const forward = new Vector3(Math.sin(yaw), 0, Math.cos(yaw));
-    const right = new Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+    const forward = forwardRef.current.set(Math.sin(yaw), 0, Math.cos(yaw));
+    const right = rightRef.current.set(Math.cos(yaw), 0, -Math.sin(yaw));
     const plane = targetRef.current.set(state.position.x, state.position.y, state.position.z);
     const desired = desiredRef.current;
     const lookAt = lookAtRef.current;
 
     if (viewMode === "thirdPerson") {
-      desired.copy(plane).addScaledVector(forward, -46).add(new Vector3(0, 16, 0)).addScaledVector(right, state.roll * -7);
-      lookAt.copy(plane).addScaledVector(forward, 36).add(new Vector3(0, 5, 0));
+      desired.copy(plane).addScaledVector(forward, -46).addScaledVector(right, state.roll * -7);
+      desired.y += 16;
+      lookAt.copy(plane).addScaledVector(forward, 36);
+      lookAt.y += 5;
     }
 
     if (viewMode === "cockpit") {
-      desired.copy(plane).addScaledVector(forward, 5.2).add(new Vector3(0, 2.3, 0));
-      lookAt.copy(plane).addScaledVector(forward, 130).add(new Vector3(0, state.pitch * 70 + 2, 0));
+      desired.copy(plane).addScaledVector(forward, 5.2);
+      desired.y += 2.3;
+      lookAt.copy(plane).addScaledVector(forward, 130);
+      lookAt.y += state.pitch * 70 + 2;
     }
 
     if (viewMode === "nose") {
-      desired.copy(plane).addScaledVector(forward, 8.2).add(new Vector3(0, 1.2, 0));
-      lookAt.copy(plane).addScaledVector(forward, 150).add(new Vector3(0, state.pitch * 80, 0));
+      desired.copy(plane).addScaledVector(forward, 8.2);
+      desired.y += 1.2;
+      lookAt.copy(plane).addScaledVector(forward, 150);
+      lookAt.y += state.pitch * 80;
     }
 
     if (viewMode === "free") {
       const orbit = clock.elapsedTime * 0.12;
-      const orbitOffset = new Vector3(Math.sin(orbit) * 64, 22, Math.cos(orbit) * 64);
-      desired.copy(plane).add(orbitOffset);
-      lookAt.copy(plane).add(new Vector3(0, 3, 0));
+      desired.set(plane.x + Math.sin(orbit) * 64, plane.y + 22, plane.z + Math.cos(orbit) * 64);
+      lookAt.copy(plane);
+      lookAt.y += 3;
     }
 
     if (state.landingQuality === "硬着陆" || state.crashed) {

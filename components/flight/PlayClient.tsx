@@ -24,8 +24,10 @@ import {
   getSelectedAircraftId,
   getSelectedAirportId,
   getSelectedMissionId,
+  normalizePlayerName,
   saveFlightRecord,
   setQualitySetting,
+  setPlayerName as persistPlayerName,
   setSelectedMissionId
 } from "@/lib/flightStorage";
 import { FlightHUD } from "@/components/flight/FlightHUD";
@@ -95,6 +97,7 @@ export function PlayClient() {
   const [result, setResult] = useState<FlightScore | false>(false);
   const [ready, setReady] = useState(false);
   const [showTutorial, setShowTutorial] = useState(true);
+  const [playerName, setPlayerName] = useState("");
 
   const controlsRef = useRef<FlightControlInput>({ ...defaultControls });
   const finishLockRef = useRef(false);
@@ -119,6 +122,7 @@ export function PlayClient() {
     setAircraft(allowedAircraft);
     setAirport(selectedAirport);
     setQuality(getQualitySetting());
+    setPlayerName(getPlayerName());
     setReady(true);
   }, [queryMission]);
 
@@ -190,7 +194,7 @@ export function PlayClient() {
       const score = scoreFlight(mission, stateRef.current, metricsRef.current);
       saveFlightRecord({
         id: createRecordId(),
-        playerName: getPlayerName(),
+        playerName: normalizePlayerName(playerName),
         missionId: mission.id,
         missionName: mission.name,
         aircraftId: aircraft.id,
@@ -209,7 +213,7 @@ export function PlayClient() {
       setPaused(false);
       controlsRef.current = { ...defaultControls };
     },
-    [aircraft, airport, metricsRef, mission, result, stateRef]
+    [aircraft, airport, metricsRef, mission, playerName, result, stateRef]
   );
 
   const restartFlight = useCallback(() => {
@@ -227,6 +231,13 @@ export function PlayClient() {
     setQualitySetting(value);
   }, []);
 
+  const handleStartFlight = useCallback((value: string) => {
+    const normalizedName = normalizePlayerName(value);
+    setPlayerName(normalizedName);
+    persistPlayerName(normalizedName);
+    setShowTutorial(false);
+  }, []);
+
   useEffect(() => {
     const interval = window.setInterval(() => {
       const snapshot = cloneState(stateRef.current);
@@ -234,7 +245,7 @@ export function PlayClient() {
       if (result === false && (snapshot.crashed || snapshot.missionCompleted)) {
         finishFlight(false);
       }
-    }, 120);
+    }, 160);
 
     return () => window.clearInterval(interval);
   }, [finishFlight, result, stateRef]);
@@ -297,7 +308,13 @@ export function PlayClient() {
       />
 
       {ready && showTutorial && result === false ? (
-        <PreflightTutorialModal aircraft={aircraft} mission={mission} onStart={() => setShowTutorial(false)} />
+        <PreflightTutorialModal
+          aircraft={aircraft}
+          mission={mission}
+          captainName={playerName}
+          onCaptainNameChange={setPlayerName}
+          onStart={handleStartFlight}
+        />
       ) : null}
 
       {result !== false ? (

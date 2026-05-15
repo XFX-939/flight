@@ -43,7 +43,7 @@ export function RecentFlightsPreview() {
               </span>
             </div>
             <p className="mt-1 text-xs text-slate-400">
-              {record.aircraftName} · {record.landingQuality} · {formatDuration(record.flightTime)}
+              {record.playerName} · {record.aircraftName} · {record.landingQuality} · {formatDuration(record.flightTime)}
             </p>
           </div>
         ))}

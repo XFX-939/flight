@@ -10,7 +10,7 @@ type CloudsProps = {
 export function Clouds({ quality }: CloudsProps) {
   const clouds = useMemo(
     () =>
-      Array.from({ length: quality === "low" ? 10 : quality === "medium" ? 18 : 28 }, (_, index) => ({
+      Array.from({ length: quality === "low" ? 6 : quality === "medium" ? 12 : 20 }, (_, index) => ({
         x: -900 + (index % 7) * 300,
         y: 260 + (index % 5) * 90,
         z: -1800 + Math.floor(index / 7) * 900,

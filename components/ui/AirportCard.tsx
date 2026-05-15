@@ -24,6 +24,11 @@ export function AirportCard({ airport, selected = false, onSelect }: AirportCard
           <div className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">{airport.location}</div>
           <h3 className="mt-2 text-xl font-black text-slate-50">{airport.name}</h3>
           <p className="mt-2 text-sm leading-6 text-slate-400">{airport.description}</p>
+          {airport.cityProfile ? (
+            <p className="mt-2 text-xs font-bold text-cyan-200">
+              城市目标：{airport.cityProfile.downtownName}
+            </p>
+          ) : null}
         </div>
         <div className="grid h-14 w-14 shrink-0 place-items-center rounded-lg border border-cyan-300/30 bg-cyan-300/10">
           <MapPinned className="h-7 w-7 text-cyan-300" />
@@ -47,6 +52,12 @@ export function AirportCard({ airport, selected = false, onSelect }: AirportCard
           <span className="block text-slate-500">能见度</span>
           <strong className="text-slate-100">{airport.visibility} mi</strong>
         </div>
+        {airport.cityProfile ? (
+          <div className="rounded-lg bg-slate-950/40 p-3">
+            <span className="block text-slate-500">市中心</span>
+            <strong className="text-slate-100">{airport.cityProfile.cityName}</strong>
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-5 flex gap-3">

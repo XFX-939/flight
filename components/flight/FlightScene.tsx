@@ -1,6 +1,7 @@
 "use client";
 
 import { Canvas } from "@react-three/fiber";
+import { memo } from "react";
 import type { MutableRefObject } from "react";
 import type {
   Aircraft,
@@ -16,6 +17,7 @@ import { useAircraftPhysics } from "@/hooks/useAircraftPhysics";
 import { AircraftModel } from "@/components/flight/AircraftModel";
 import { AirportScene } from "@/components/flight/AirportScene";
 import { CameraSystem } from "@/components/flight/CameraSystem";
+import { CityScape } from "@/components/flight/CityScape";
 import { Clouds } from "@/components/flight/Clouds";
 import { FlightEffects } from "@/components/flight/FlightEffects";
 import { Runway } from "@/components/flight/Runway";
@@ -38,7 +40,17 @@ function PhysicsLoop(props: Omit<FlightSceneProps, "quality" | "viewMode">) {
   return null;
 }
 
-export function FlightScene({
+function resolveQuality(quality: QualitySetting): Exclude<QualitySetting, "auto"> {
+  if (quality !== "auto") {
+    return quality;
+  }
+  if (typeof window !== "undefined" && window.innerWidth < 760) {
+    return "low";
+  }
+  return "medium";
+}
+
+function FlightSceneComponent({
   aircraft,
   airport,
   mission,
@@ -49,19 +61,22 @@ export function FlightScene({
   metricsRef,
   controlsRef
 }: FlightSceneProps) {
-  const resolvedQuality = quality === "auto" ? "medium" : quality;
+  const resolvedQuality = resolveQuality(quality);
+  const shadowsEnabled = resolvedQuality === "high";
+  const dpr: number | [number, number] = resolvedQuality === "high" ? [1, 1.35] : resolvedQuality === "medium" ? 1 : 0.9;
 
   return (
     <Canvas
       className="h-full w-full bg-[#07111F]"
       camera={{ position: [0, 18, -54], fov: 62, near: 1, far: 9000 }}
-      dpr={resolvedQuality === "low" ? 1 : [1, 1.6]}
-      shadows={resolvedQuality !== "low" ? "percentage" : false}
+      dpr={dpr}
+      shadows={shadowsEnabled ? "percentage" : false}
+      performance={{ min: 0.65 }}
     >
       <color attach="background" args={["#07111F"]} />
       <fog attach="fog" args={["#07111F", 900, 8200]} />
       <ambientLight intensity={0.52} />
-      <directionalLight position={[260, 540, -360]} intensity={1.15} castShadow={resolvedQuality !== "low"} />
+      <directionalLight position={[260, 540, -360]} intensity={1.15} castShadow={shadowsEnabled} />
       <hemisphereLight args={["#7dd3fc", "#0f172a", 0.72]} />
       <PhysicsLoop
         aircraft={aircraft}
@@ -73,7 +88,8 @@ export function FlightScene({
         controlsRef={controlsRef}
       />
       <Terrain quality={resolvedQuality} />
-      <Runway airport={airport} />
+      <CityScape airport={airport} quality={resolvedQuality} />
+      <Runway airport={airport} quality={resolvedQuality} />
       <AirportScene airport={airport} />
       <Clouds quality={resolvedQuality} />
       <AircraftModel aircraft={aircraft} stateRef={stateRef} />
@@ -82,3 +98,5 @@ export function FlightScene({
     </Canvas>
   );
 }
+
+export const FlightScene = memo(FlightSceneComponent);

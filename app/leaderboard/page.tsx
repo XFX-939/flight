@@ -54,7 +54,7 @@ export default function LeaderboardPage() {
                 <div className="text-3xl font-black text-cyan-200">#{index + 1}</div>
                 <div>
                   <h3 className="font-black text-slate-50">{record.missionName}</h3>
-                  <p className="text-sm text-slate-400">{record.aircraftName} · {record.airportName}</p>
+                  <p className="text-sm text-slate-400">{record.playerName} · {record.aircraftName} · {record.airportName}</p>
                 </div>
                 <div className="text-sm text-slate-300">评分 <strong className="text-slate-50">{record.score}</strong></div>
                 <div className="text-sm text-slate-300">评级 <strong className="text-cyan-200">{record.rating}</strong></div>

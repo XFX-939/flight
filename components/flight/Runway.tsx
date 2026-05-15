@@ -2,10 +2,11 @@
 
 import { useMemo } from "react";
 import { CanvasTexture } from "three";
-import type { Airport } from "@/types/flight";
+import type { Airport, QualitySetting } from "@/types/flight";
 
 type RunwayProps = {
   airport: Airport;
+  quality: QualitySetting;
 };
 
 const RUNWAY_WIDTH = 62;
@@ -34,17 +35,21 @@ function createRunwayNumberTexture(heading: number): CanvasTexture {
   return texture;
 }
 
-export function Runway({ airport }: RunwayProps) {
+export function Runway({ airport, quality }: RunwayProps) {
   const length = airport.runwayLength;
   const stripes = useMemo(
     () => Array.from({ length: Math.max(8, Math.floor(length / 180)) }, (_, index) => -length / 2 + 120 + index * 180),
     [length]
   );
   const lights = useMemo(
-    () => Array.from({ length: Math.max(12, Math.floor(length / 150)) }, (_, index) => -length / 2 + index * 150),
-    [length]
+    () => {
+      const spacing = quality === "high" ? 210 : quality === "medium" ? 300 : 430;
+      return Array.from({ length: Math.max(8, Math.floor(length / spacing)) }, (_, index) => -length / 2 + index * spacing);
+    },
+    [length, quality]
   );
   const numberTexture = useMemo(() => createRunwayNumberTexture(airport.runwayHeading), [airport.runwayHeading]);
+  const showLightSources = quality === "high";
 
   return (
     <group>
@@ -89,18 +94,22 @@ export function Runway({ airport }: RunwayProps) {
         <planeGeometry args={[28, 15]} />
         <meshBasicMaterial map={numberTexture} transparent polygonOffset polygonOffsetFactor={-4} polygonOffsetUnits={-4} />
       </mesh>
-      {lights.map((z) => (
+      {lights.map((z, index) => (
         <group key={z}>
           <mesh position={[-RUNWAY_WIDTH / 2 - 4, 0.3, z]}>
             <sphereGeometry args={[0.38, 10, 10]} />
             <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={1.4} />
           </mesh>
-          <pointLight position={[-RUNWAY_WIDTH / 2 - 4, 0.8, z]} color="#38bdf8" intensity={0.8} distance={22} />
+          {showLightSources && index % 2 === 0 ? (
+            <pointLight position={[-RUNWAY_WIDTH / 2 - 4, 0.8, z]} color="#38bdf8" intensity={0.42} distance={18} />
+          ) : null}
           <mesh position={[RUNWAY_WIDTH / 2 + 4, 0.3, z]}>
             <sphereGeometry args={[0.38, 10, 10]} />
             <meshStandardMaterial color="#38bdf8" emissive="#38bdf8" emissiveIntensity={1.4} />
           </mesh>
-          <pointLight position={[RUNWAY_WIDTH / 2 + 4, 0.8, z]} color="#38bdf8" intensity={0.8} distance={22} />
+          {showLightSources && index % 2 === 0 ? (
+            <pointLight position={[RUNWAY_WIDTH / 2 + 4, 0.8, z]} color="#38bdf8" intensity={0.42} distance={18} />
+          ) : null}
         </group>
       ))}
     </group>

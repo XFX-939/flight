@@ -11,6 +11,7 @@ const AIRPORT_KEY = "felix-selected-airport";
 const MISSION_KEY = "felix-selected-mission";
 const QUALITY_KEY = "felix-quality-setting";
 const PLAYER_KEY = "felix-player-name";
+const DEFAULT_CAPTAIN_NAME = "Felix机长";
 
 function canUseStorage(): boolean {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
@@ -113,14 +114,22 @@ export function setQualitySetting(value: QualitySetting): void {
 
 export function getPlayerName(): string {
   if (!canUseStorage()) {
-    return "Felix Pilot";
+    return "";
   }
-  const value = window.localStorage.getItem(PLAYER_KEY) ?? "Felix Pilot";
-  return value.trim().length > 0 ? value : "Felix Pilot";
+  const value = window.localStorage.getItem(PLAYER_KEY) ?? "";
+  return value.trim().length > 0 ? normalizePlayerName(value) : "";
 }
 
 export function setPlayerName(value: string): void {
   if (canUseStorage()) {
-    window.localStorage.setItem(PLAYER_KEY, value.trim().length > 0 ? value.trim() : "Felix Pilot");
+    window.localStorage.setItem(PLAYER_KEY, normalizePlayerName(value));
   }
+}
+
+export function normalizePlayerName(value: string): string {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (normalized.length === 0) {
+    return DEFAULT_CAPTAIN_NAME;
+  }
+  return normalized.endsWith("机长") ? normalized : `${normalized}机长`;
 }
