@@ -1,7 +1,8 @@
 "use client";
 
-import { Pause, RadioTower } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Pause, RadioTower } from "lucide-react";
 import type { Aircraft, Airport, FlightRuntimeState, Mission, ViewMode } from "@/types/flight";
+import { getFlightAdvisories, type FlightAdvisorySeverity } from "@/lib/flightAdvisory";
 import { safeRound } from "@/lib/math";
 import { AttitudeIndicator } from "@/components/flight/AttitudeIndicator";
 import { MissionPanel } from "@/components/flight/MissionPanel";
@@ -23,6 +24,33 @@ const viewLabels: Record<ViewMode, string> = {
   free: "环视"
 };
 
+const advisoryStyles: Record<FlightAdvisorySeverity, { shell: string; icon: string; text: string; label: string }> = {
+  danger: {
+    shell: "border-red-400/45 bg-red-950/45 shadow-red-950/30",
+    icon: "bg-red-500/15 text-red-200 ring-red-300/30",
+    text: "text-red-100",
+    label: "text-red-200"
+  },
+  warning: {
+    shell: "border-amber-300/45 bg-amber-950/35 shadow-amber-950/25",
+    icon: "bg-amber-500/15 text-amber-200 ring-amber-200/30",
+    text: "text-amber-50",
+    label: "text-amber-200"
+  },
+  info: {
+    shell: "border-cyan-300/35 bg-sky-950/45 shadow-cyan-950/20",
+    icon: "bg-cyan-400/15 text-cyan-100 ring-cyan-200/25",
+    text: "text-cyan-50",
+    label: "text-cyan-200"
+  },
+  success: {
+    shell: "border-emerald-300/35 bg-emerald-950/35 shadow-emerald-950/20",
+    icon: "bg-emerald-400/15 text-emerald-100 ring-emerald-200/25",
+    text: "text-emerald-50",
+    label: "text-emerald-200"
+  }
+};
+
 export function FlightHUD({ state, aircraft, airport, mission, viewMode, onPause, onEndFlight }: FlightHUDProps) {
   const metrics = [
     { label: "SPD", value: `${safeRound(state.airspeed)} kt` },
@@ -31,6 +59,10 @@ export function FlightHUD({ state, aircraft, airport, mission, viewMode, onPause
     { label: "V/S", value: `${safeRound(state.verticalSpeed)} fpm` },
     { label: "THR", value: `${safeRound(state.throttle * 100)}%` }
   ];
+  const advisories = getFlightAdvisories(state, aircraft, mission);
+  const primaryAdvisory = advisories[0];
+  const primaryStyle = advisoryStyles[primaryAdvisory.severity];
+  const AdvisoryIcon = primaryAdvisory.severity === "danger" || primaryAdvisory.severity === "warning" ? AlertTriangle : CheckCircle2;
 
   return (
     <div className="pointer-events-none absolute inset-0 z-20 p-3 sm:p-4">
@@ -46,6 +78,35 @@ export function FlightHUD({ state, aircraft, airport, mission, viewMode, onPause
         <button type="button" className="pointer-events-auto grid h-12 w-12 place-items-center rounded-lg border border-sky-300/25 bg-slate-950/75 text-slate-100" onClick={onPause} aria-label="暂停">
           <Pause className="h-5 w-5" />
         </button>
+      </div>
+
+      <div className="pointer-events-none absolute left-3 right-3 top-[7.75rem] md:left-1/2 md:right-auto md:top-24 md:w-[min(88vw,430px)] md:-translate-x-1/2">
+        <div className={`hud-panel rounded-lg border p-3 shadow-2xl backdrop-blur-md ${primaryStyle.shell}`} aria-live="polite">
+          <div className="flex items-start gap-3">
+            <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-lg ring-1 ${primaryStyle.icon}`}>
+              <AdvisoryIcon className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-3">
+                <div className={`text-xs font-black uppercase tracking-[0.16em] ${primaryStyle.label}`}>HUD 建议</div>
+                <div className="rounded-md bg-slate-950/45 px-2 py-1 text-[10px] font-black text-slate-100">{primaryAdvisory.value}</div>
+              </div>
+              <div className={`mt-1 text-sm font-black sm:text-base ${primaryStyle.text}`}>{primaryAdvisory.title}</div>
+              <p className="mt-1 text-xs leading-5 text-slate-100/85 sm:text-sm">{primaryAdvisory.message}</p>
+            </div>
+          </div>
+
+          {advisories.length > 1 ? (
+            <div className="mt-3 hidden border-t border-white/10 pt-3 md:grid md:gap-2">
+              {advisories.slice(1, 3).map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-3 rounded-md bg-slate-950/35 px-3 py-2 text-xs">
+                  <span className={advisoryStyles[item.severity].label}>{item.title}</span>
+                  <span className="truncate text-right text-slate-200">{item.message}</span>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <div className="mt-3 hidden w-40 flex-col gap-3 md:flex">
@@ -94,7 +155,7 @@ export function FlightHUD({ state, aircraft, airport, mission, viewMode, onPause
         ) : null}
       </div>
 
-      <div className="hud-panel pointer-events-none absolute left-3 top-40 rounded-lg px-3 py-2 text-xs text-slate-300 md:hidden">
+      <div className="hud-panel pointer-events-none absolute left-3 top-56 rounded-lg px-3 py-2 text-xs text-slate-300 md:hidden">
         <RadioTower className="mr-1 inline h-3 w-3 text-cyan-300" />
         {mission.name} · {airport.name}
       </div>
