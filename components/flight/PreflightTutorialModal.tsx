@@ -39,7 +39,7 @@ export function PreflightTutorialModal({ aircraft, mission, onStart }: Preflight
             <ArrowUp className="h-6 w-6 text-cyan-300" />
             <h3 className="mt-3 font-black text-slate-50">2. 速度到位再拉起</h3>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              HUD 的 SPD 到 {aircraft.takeoffSpeed} kt 左右后，轻按 <strong className="text-slate-100">S / ↓</strong> 抬机头。
+              HUD 的 SPD 到 {aircraft.takeoffSpeed} kt 左右后，按住 <strong className="text-slate-100">S / ↓</strong> 或底部 <strong className="text-slate-100">PULL</strong> 抬机头。
               不要一直猛拉，否则会失速。
             </p>
           </div>
@@ -59,7 +59,7 @@ export function PreflightTutorialModal({ aircraft, mission, onStart }: Preflight
               PC 操作
             </div>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              Shift/Ctrl 油门，W/S 俯仰，A/D 滚转，Q/E 偏航，F 襟翼，G 起落架，B 刹车，V 切换视角。
+              Shift/Ctrl 油门，W/S 俯仰，A/D 滚转，Q/E 偏航。也可以用底部 THR+ 和 PULL 完成起飞。
             </p>
           </div>
           <div className="rounded-lg border border-sky-300/10 bg-slate-950/35 p-4">

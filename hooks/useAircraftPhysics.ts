@@ -122,7 +122,9 @@ export function useAircraftPhysics({
     ratesRef.current.yaw = lerp(ratesRef.current.yaw, targetYawRate, dt * 2.4);
 
     if (state.onGround) {
-      state.pitch = clamp(lerp(state.pitch, input.pitch > 0 && state.airspeed > takeoffSpeed * 0.72 ? input.pitch * 0.18 : 0, dt * 2.8), -0.03, 0.22);
+      const canRotate = state.airspeed > takeoffSpeed * 0.64;
+      const rotateTarget = input.pitch > 0 && canRotate ? input.pitch * 0.24 : input.pitch < 0 ? -0.04 : 0;
+      state.pitch = clamp(lerp(state.pitch, rotateTarget, dt * 4.4), -0.04, 0.26);
       state.roll = lerp(state.roll, 0, dt * 6.5);
       state.yaw += input.yaw * dt * 0.18;
     } else {
@@ -153,9 +155,10 @@ export function useAircraftPhysics({
 
     if (state.onGround) {
       verticalMps = 0;
-      if (state.airspeed >= takeoffSpeed && state.pitch > 0.08) {
+      if (state.airspeed >= takeoffSpeed * 0.96 && state.pitch > 0.055) {
         state.onGround = false;
-        verticalMps = 2.8 + Math.sin(state.pitch) * nextSpeedMps * 0.42;
+        state.pitch = Math.max(state.pitch, 0.11);
+        verticalMps = 4.2 + Math.sin(state.pitch) * nextSpeedMps * 0.5;
         if (!metrics.takeoffRecorded) {
           metrics.takeoffDistance = Math.max(0, state.position.z + airport.runwayLength / 2);
           metrics.takeoffRecorded = true;
@@ -214,7 +217,9 @@ export function useAircraftPhysics({
     if (state.onGround) {
       state.position.y = GROUND_Y;
       state.velocity.y = 0;
-      state.pitch = lerp(state.pitch, 0, dt * 7);
+      if (input.pitch <= 0 || state.airspeed < takeoffSpeed * 0.64) {
+        state.pitch = lerp(state.pitch, 0, dt * 4.5);
+      }
       state.roll = lerp(state.roll, 0, dt * 7);
       if (state.brake) {
         nextSpeedMps = Math.max(0, nextSpeedMps - aircraft.brakePower * 18 * dt);
@@ -259,7 +264,9 @@ export function useAircraftPhysics({
           ? "训练完成，爬升稳定"
           : "高度达标，修正航向"
         : state.onGround
-          ? "加油门滑跑，达到起飞速度后轻拉杆"
+          ? state.airspeed >= aircraft.takeoffSpeed * 0.9
+            ? "速度已到，按住 S / ↓ 或 PULL 抬机头"
+            : "加油门滑跑，达到起飞速度后轻拉杆"
           : "保持爬升，目标 1500 ft";
       if (state.altitude >= mission.targetAltitude && headingOk && speedOk && !state.stalled) {
         state.missionCompleted = true;

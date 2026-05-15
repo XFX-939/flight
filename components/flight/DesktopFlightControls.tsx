@@ -1,7 +1,7 @@
 "use client";
 
 import type { MutableRefObject } from "react";
-import { ArrowDown, ArrowUp, Camera, CircleParking, PlaneLanding } from "lucide-react";
+import { ArrowDown, ArrowUp, Camera, CircleParking, PlaneLanding, RotateCcw, RotateCw } from "lucide-react";
 import type { FlightControlInput, FlightRuntimeState } from "@/types/flight";
 
 type DesktopFlightControlsProps = {
@@ -37,6 +37,12 @@ export function DesktopFlightControls({
     }
   };
 
+  const setPitch = (value: number) => {
+    if (!disabled) {
+      controlsRef.current.pitch = value;
+    }
+  };
+
   return (
     <div className="pointer-events-auto absolute bottom-4 left-1/2 z-30 hidden -translate-x-1/2 gap-2 md:flex">
       <button
@@ -62,6 +68,30 @@ export function DesktopFlightControls({
       >
         <ArrowDown className="h-4 w-4 text-cyan-300" />
         THR-
+      </button>
+      <button
+        type="button"
+        className={buttonClass}
+        disabled={disabled}
+        onPointerDown={() => setPitch(1)}
+        onPointerUp={() => setPitch(0)}
+        onPointerLeave={() => setPitch(0)}
+        onPointerCancel={() => setPitch(0)}
+      >
+        <RotateCcw className="h-4 w-4 text-cyan-300" />
+        PULL
+      </button>
+      <button
+        type="button"
+        className={buttonClass}
+        disabled={disabled}
+        onPointerDown={() => setPitch(-1)}
+        onPointerUp={() => setPitch(0)}
+        onPointerLeave={() => setPitch(0)}
+        onPointerCancel={() => setPitch(0)}
+      >
+        <RotateCw className="h-4 w-4 text-cyan-300" />
+        PUSH
       </button>
       <button
         type="button"
