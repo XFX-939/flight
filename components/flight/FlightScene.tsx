@@ -54,7 +54,7 @@ export function FlightScene({
   return (
     <Canvas
       className="h-full w-full bg-[#07111F]"
-      camera={{ position: [0, 18, -54], fov: 62, near: 0.5, far: 12000 }}
+      camera={{ position: [0, 18, -54], fov: 62, near: 1, far: 9000 }}
       dpr={resolvedQuality === "low" ? 1 : [1, 1.6]}
       shadows={resolvedQuality !== "low" ? "percentage" : false}
     >

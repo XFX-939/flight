@@ -11,13 +11,13 @@ export function AirportScene({ airport }: AirportSceneProps) {
 
   return (
     <group>
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[112, 0.014, apronZ]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[112, 0.13, apronZ]} renderOrder={2}>
         <planeGeometry args={[140, 180]} />
-        <meshStandardMaterial color="#334155" roughness={0.8} />
+        <meshStandardMaterial color="#334155" roughness={0.8} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
       </mesh>
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[62, 0.016, apronZ]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[62, 0.15, apronZ]} renderOrder={3}>
         <planeGeometry args={[18, 460]} />
-        <meshStandardMaterial color="#293548" roughness={0.8} />
+        <meshStandardMaterial color="#293548" roughness={0.8} polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
       </mesh>
       <mesh position={[160, 14, apronZ - 20]} castShadow>
         <boxGeometry args={[74, 28, 44]} />

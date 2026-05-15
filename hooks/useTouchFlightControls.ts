@@ -15,7 +15,7 @@ export function useTouchFlightControls(controlsRef: MutableRefObject<FlightContr
       const centerY = rect.top + rect.height / 2;
       const x = clamp((event.clientX - centerX) / (rect.width / 2), -1, 1);
       const y = clamp((event.clientY - centerY) / (rect.height / 2), -1, 1);
-      controlsRef.current.roll = x;
+      controlsRef.current.roll = -x;
       controlsRef.current.pitch = -y;
       setStick({ x, y, active: true });
     },

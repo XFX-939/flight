@@ -9,6 +9,10 @@ type RunwayProps = {
 };
 
 const RUNWAY_WIDTH = 62;
+const RUNWAY_Y = 0.12;
+const MARKING_Y = 0.18;
+const EDGE_Y = 0.19;
+const NUMBER_Y = 0.21;
 
 function createRunwayNumberTexture(heading: number): CanvasTexture {
   const canvas = document.createElement("canvas");
@@ -44,20 +48,20 @@ export function Runway({ airport }: RunwayProps) {
 
   return (
     <group>
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, RUNWAY_Y, 0]} renderOrder={2}>
         <planeGeometry args={[RUNWAY_WIDTH, length]} />
-        <meshStandardMaterial color="#1f2937" roughness={0.82} />
+        <meshStandardMaterial color="#1f2937" roughness={0.82} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
       </mesh>
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.045, -length / 2 + 34]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, MARKING_Y, -length / 2 + 34]} renderOrder={3}>
         <planeGeometry args={[RUNWAY_WIDTH - 8, 18]} />
         <meshStandardMaterial color="#e5e7eb" polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
       </mesh>
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.045, length / 2 - 34]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, MARKING_Y, length / 2 - 34]} renderOrder={3}>
         <planeGeometry args={[RUNWAY_WIDTH - 8, 18]} />
         <meshStandardMaterial color="#e5e7eb" polygonOffset polygonOffsetFactor={-2} polygonOffsetUnits={-2} />
       </mesh>
       {stripes.map((z) => (
-        <mesh key={z} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.052, z]}>
+        <mesh key={z} rotation={[-Math.PI / 2, 0, 0]} position={[0, MARKING_Y, z]} renderOrder={3}>
           <planeGeometry args={[2.2, 42]} />
           <meshStandardMaterial
             color="#f8fafc"
@@ -69,19 +73,19 @@ export function Runway({ airport }: RunwayProps) {
           />
         </mesh>
       ))}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-RUNWAY_WIDTH / 2 + 2.2, 0.055, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-RUNWAY_WIDTH / 2 + 2.2, EDGE_Y, 0]} renderOrder={3}>
         <planeGeometry args={[1.5, length]} />
         <meshStandardMaterial color="#f8fafc" polygonOffset polygonOffsetFactor={-3} polygonOffsetUnits={-3} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[RUNWAY_WIDTH / 2 - 2.2, 0.055, 0]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[RUNWAY_WIDTH / 2 - 2.2, EDGE_Y, 0]} renderOrder={3}>
         <planeGeometry args={[1.5, length]} />
         <meshStandardMaterial color="#f8fafc" polygonOffset polygonOffsetFactor={-3} polygonOffsetUnits={-3} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, -length / 2 + 90]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, NUMBER_Y, -length / 2 + 90]} renderOrder={4}>
         <planeGeometry args={[28, 15]} />
         <meshBasicMaterial map={numberTexture} transparent polygonOffset polygonOffsetFactor={-4} polygonOffsetUnits={-4} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, Math.PI]} position={[0, 0.06, length / 2 - 90]}>
+      <mesh rotation={[-Math.PI / 2, 0, Math.PI]} position={[0, NUMBER_Y, length / 2 - 90]} renderOrder={4}>
         <planeGeometry args={[28, 15]} />
         <meshBasicMaterial map={numberTexture} transparent polygonOffset polygonOffsetFactor={-4} polygonOffsetUnits={-4} />
       </mesh>

@@ -24,17 +24,17 @@ export function Terrain({ quality }: TerrainProps) {
 
   return (
     <group>
-      <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 1800]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.18, 1800]} renderOrder={0}>
         <planeGeometry args={[9000, 13000]} />
-        <meshStandardMaterial color="#17311f" roughness={0.92} />
+        <meshStandardMaterial color="#17311f" roughness={0.92} depthWrite={false} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-840, 0.01, 2300]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-840, -0.08, 2300]} renderOrder={1}>
         <planeGeometry args={[620, 8600]} />
-        <meshStandardMaterial color="#0e7490" roughness={0.48} metalness={0.08} />
+        <meshStandardMaterial color="#0e7490" roughness={0.48} metalness={0.08} polygonOffset polygonOffsetFactor={1} polygonOffsetUnits={1} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[980, 0.012, 4400]}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[980, -0.07, 4400]} renderOrder={1}>
         <planeGeometry args={[1600, 3100]} />
-        <meshStandardMaterial color="#0f766e" roughness={0.52} metalness={0.05} />
+        <meshStandardMaterial color="#0f766e" roughness={0.52} metalness={0.05} polygonOffset polygonOffsetFactor={1} polygonOffsetUnits={1} />
       </mesh>
       {mountains.map((mountain) => (
         <mesh key={`${mountain.x}-${mountain.z}`} position={[mountain.x, mountain.height / 2 - 8, mountain.z]} castShadow receiveShadow>

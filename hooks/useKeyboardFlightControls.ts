@@ -30,8 +30,8 @@ export function useKeyboardFlightControls(
           Number(pressed.has("KeyW") || pressed.has("ArrowUp"))
         : 0;
       controlsRef.current.roll = enabled
-        ? Number(pressed.has("KeyD") || pressed.has("ArrowRight")) -
-          Number(pressed.has("KeyA") || pressed.has("ArrowLeft"))
+        ? Number(pressed.has("KeyA") || pressed.has("ArrowLeft")) -
+          Number(pressed.has("KeyD") || pressed.has("ArrowRight"))
         : 0;
       controlsRef.current.yaw = enabled ? Number(pressed.has("KeyE")) - Number(pressed.has("KeyQ")) : 0;
       controlsRef.current.throttleDelta = enabled ? Number(pressed.has("ShiftLeft") || pressed.has("ShiftRight")) - Number(pressed.has("ControlLeft") || pressed.has("ControlRight")) : 0;
