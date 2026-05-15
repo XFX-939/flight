@@ -3,6 +3,7 @@
 import { Check, Gauge, Plane, Play } from "lucide-react";
 import Link from "next/link";
 import type { Aircraft } from "@/types/flight";
+import { getAircraftFeelStats, getAircraftPerformanceProfile } from "@/lib/aircraftPerformance";
 import { setSelectedAircraftId } from "@/lib/flightStorage";
 
 type AircraftCardProps = {
@@ -12,6 +13,9 @@ type AircraftCardProps = {
 };
 
 export function AircraftCard({ aircraft, selected = false, onSelect }: AircraftCardProps) {
+  const feelStats = getAircraftFeelStats(aircraft);
+  const profile = getAircraftPerformanceProfile(aircraft);
+
   const handleSelect = () => {
     setSelectedAircraftId(aircraft.id);
     onSelect?.(aircraft.id);
@@ -56,6 +60,27 @@ export function AircraftCard({ aircraft, selected = false, onSelect }: AircraftC
         <span className="rounded-full border border-sky-300/25 px-3 py-1 text-sky-200">难度 {aircraft.difficulty}</span>
         <span className="rounded-full border border-sky-300/25 px-3 py-1 text-sky-200">稳定性 {aircraft.stability}</span>
         <span className="rounded-full border border-sky-300/25 px-3 py-1 text-sky-200">操控 {aircraft.handling}</span>
+      </div>
+
+      <div className="mt-4 rounded-lg border border-sky-300/10 bg-slate-950/30 p-3">
+        <div className="text-xs font-bold text-cyan-200">{profile.feelSummary}</div>
+        <p className="mt-1 text-xs leading-5 text-slate-500">{profile.handlingHint}</p>
+        <div className="mt-3 grid gap-2">
+          {feelStats.map((stat) => (
+            <div key={stat.label}>
+              <div className="flex justify-between gap-2 text-[11px] font-bold text-slate-300">
+                <span>{stat.label}</span>
+                <span>{stat.text}</span>
+              </div>
+              <div className="mt-1 h-1.5 rounded-full bg-slate-800">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${stat.value}%`, backgroundColor: aircraft.accentColor }}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       <div className="mt-5 flex gap-3">

@@ -11,6 +11,7 @@ import type {
   FlightRuntimeState,
   Mission
 } from "@/types/flight";
+import { getAircraftPerformanceProfile } from "@/lib/aircraftPerformance";
 import {
   FT_PER_METER,
   KNOTS_PER_MPS,
@@ -103,6 +104,7 @@ export function useAircraftPhysics({
     const speedMps = clamp(state.airspeed * MPS_PER_KNOT, 0, maxSpeedMps * 1.08);
     const handling = handlingFactor(aircraft);
     const stability = stabilityFactor(aircraft);
+    const profile = getAircraftPerformanceProfile(aircraft);
     const flapLift = 1 + state.flaps * 0.1 * aircraft.flapEffectiveness;
     const flapDrag = state.flaps * 0.2;
     const gearDrag = state.gearDown ? 0.2 : 0;
@@ -111,38 +113,39 @@ export function useAircraftPhysics({
       ? input.throttleOverride
       : state.throttle + input.throttleDelta * dt * 0.46 * aircraft.throttleResponse;
 
-    state.throttle = clamp(lerp(state.throttle, throttleTarget, input.useThrottleOverride ? dt * 4.2 : 1), 0, 1);
+    const throttleFollowRate = input.useThrottleOverride ? dt * (2.2 + aircraft.throttleResponse * 2.6) : 1;
+    state.throttle = clamp(lerp(state.throttle, throttleTarget, throttleFollowRate), 0, 1);
     state.brake = input.brake;
 
-    const targetPitchRate = input.pitch * (0.58 * handling);
-    const targetRollRate = input.roll * (1.28 * handling) - state.roll * 0.92 * stability;
-    const targetYawRate = input.yaw * (0.42 * handling) + Math.sin(state.roll) * clamp(state.airspeed / aircraft.maxSpeed, 0, 1) * 0.38;
-    ratesRef.current.pitch = lerp(ratesRef.current.pitch, targetPitchRate, dt * 3.8);
-    ratesRef.current.roll = lerp(ratesRef.current.roll, targetRollRate, dt * 4.2);
-    ratesRef.current.yaw = lerp(ratesRef.current.yaw, targetYawRate, dt * 2.4);
+    const targetPitchRate = input.pitch * profile.pitchAuthority * handling;
+    const targetRollRate = input.roll * profile.rollAuthority * handling - state.roll * profile.rollDamping * stability;
+    const targetYawRate = input.yaw * profile.yawAuthority * handling + Math.sin(state.roll) * clamp(state.airspeed / aircraft.maxSpeed, 0, 1) * 0.38;
+    ratesRef.current.pitch = lerp(ratesRef.current.pitch, targetPitchRate, dt * profile.pitchResponse);
+    ratesRef.current.roll = lerp(ratesRef.current.roll, targetRollRate, dt * profile.rollResponse);
+    ratesRef.current.yaw = lerp(ratesRef.current.yaw, targetYawRate, dt * profile.yawResponse);
 
     if (state.onGround) {
       const canRotate = state.airspeed > takeoffSpeed * 0.64;
-      const rotateTarget = input.pitch > 0 && canRotate ? input.pitch * 0.24 : input.pitch < 0 ? -0.04 : 0;
-      state.pitch = clamp(lerp(state.pitch, rotateTarget, dt * 4.4), -0.04, 0.26);
+      const rotateTarget = input.pitch > 0 && canRotate ? input.pitch * profile.rotationPitch : input.pitch < 0 ? -0.04 : 0;
+      state.pitch = clamp(lerp(state.pitch, rotateTarget, dt * profile.rotationRate), -0.04, 0.28);
       state.roll = lerp(state.roll, 0, dt * 6.5);
       state.yaw += input.yaw * dt * 0.18;
     } else {
       state.pitch = clamp(state.pitch + ratesRef.current.pitch * dt, -0.42, 0.5);
-      state.roll = clamp(state.roll + ratesRef.current.roll * dt, -1.12, 1.12);
+      state.roll = clamp(state.roll + ratesRef.current.roll * dt, -profile.maxRoll, profile.maxRoll);
       state.yaw += ratesRef.current.yaw * dt;
-      state.pitch = lerp(state.pitch, 0.02, dt * 0.16 * stability);
+      state.pitch = lerp(state.pitch, 0.02, dt * profile.trimRate * stability);
     }
 
     state.heading = normalizeHeading(radToDeg(state.yaw));
 
-    const thrustAccel = state.throttle * (7.2 + aircraft.throttleResponse * 5.2);
-    const profileDrag = (speedMps / maxSpeedMps) * (speedMps / maxSpeedMps) * 7.8;
+    const thrustAccel = state.throttle * (7.2 + aircraft.throttleResponse * 5.2) * profile.thrustScale;
+    const profileDrag = (speedMps / maxSpeedMps) * (speedMps / maxSpeedMps) * 7.8 * profile.dragScale;
     const pitchDrag = Math.max(0, state.pitch) * 4.5 + Math.abs(state.roll) * 0.7;
     const totalDrag = profileDrag + flapDrag * 2.4 + gearDrag * 2 + pitchDrag + brakeDrag;
     let nextSpeedMps = clamp(speedMps + (thrustAccel - totalDrag) * dt, 0, maxSpeedMps * 1.08);
 
-    const stallThreshold = stallSpeed * (state.pitch > 0.15 ? 1.08 : 0.94);
+    const stallThreshold = stallSpeed * (state.pitch > profile.stallPitchThreshold ? 1.1 : 0.94);
     state.stalled = !state.onGround && state.airspeed < stallThreshold && state.pitch > 0.04;
     if (state.stalled && !metrics.lastStalled) {
       metrics.stallWarnings += 1;
@@ -158,7 +161,7 @@ export function useAircraftPhysics({
       if (state.airspeed >= takeoffSpeed * 0.96 && state.pitch > 0.055) {
         state.onGround = false;
         state.pitch = Math.max(state.pitch, 0.11);
-        verticalMps = 4.2 + Math.sin(state.pitch) * nextSpeedMps * 0.5;
+        verticalMps = profile.liftoffBoost + Math.sin(state.pitch) * nextSpeedMps * 0.5;
         if (!metrics.takeoffRecorded) {
           metrics.takeoffDistance = Math.max(0, state.position.z + airport.runwayLength / 2);
           metrics.takeoffRecorded = true;
@@ -166,7 +169,7 @@ export function useAircraftPhysics({
       }
     } else {
       const pitchClimb = Math.sin(state.pitch) * nextSpeedMps * 0.72;
-      const liftClimb = (liftRatio * flapLift * rollLift - 1.02) * 2.6;
+      const liftClimb = (liftRatio * flapLift * rollLift * profile.liftScale - 1.02) * 2.6;
       verticalMps = pitchClimb + liftClimb - (state.gearDown ? 0.6 : 0);
       if (state.stalled) {
         verticalMps -= 9.5;

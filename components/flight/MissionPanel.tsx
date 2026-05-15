@@ -49,6 +49,9 @@ export function MissionPanel({ mission, aircraft, airport, state, onEndFlight }:
           <Square className="h-3 w-3 text-cyan-300" />
           {aircraft.name}
         </div>
+        <div className="pl-5 text-slate-500">
+          起飞 {aircraft.takeoffSpeed} kt · 失速 {aircraft.stallSpeed} kt · 操控 {aircraft.handling}
+        </div>
         <div className="flex items-center gap-2">
           <MapPin className="h-3 w-3 text-cyan-300" />
           {airport.name}

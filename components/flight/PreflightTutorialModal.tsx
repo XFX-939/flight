@@ -1,22 +1,27 @@
 "use client";
 
-import { ArrowUp, Gamepad2, Gauge, MousePointer2, PlaneTakeoff, Smartphone, UserRound } from "lucide-react";
+import { ArrowUp, Gamepad2, Gauge, MousePointer2, Plane, PlaneTakeoff, Smartphone, UserRound } from "lucide-react";
 import type { Aircraft, Mission } from "@/types/flight";
+import { getAircraftFeelStats, getAircraftPerformanceProfile } from "@/lib/aircraftPerformance";
 import { normalizePlayerName } from "@/lib/flightStorage";
 
 type PreflightTutorialModalProps = {
   aircraft: Aircraft;
+  aircraftOptions: Aircraft[];
   mission: Mission;
   captainName: string;
   onCaptainNameChange: (value: string) => void;
+  onAircraftChange: (aircraftId: string) => void;
   onStart: (captainName: string) => void;
 };
 
 export function PreflightTutorialModal({
   aircraft,
+  aircraftOptions,
   mission,
   captainName,
   onCaptainNameChange,
+  onAircraftChange,
   onStart
 }: PreflightTutorialModalProps) {
   const canStart = captainName.trim().length > 0;
@@ -25,7 +30,7 @@ export function PreflightTutorialModal({
   return (
     <div className="absolute inset-0 z-50 grid place-items-center bg-slate-950/72 p-4 backdrop-blur-sm">
       <form
-        className="hud-panel w-full max-w-3xl rounded-lg p-5"
+        className="hud-panel max-h-[calc(100dvh-2rem)] w-full max-w-5xl overflow-y-auto rounded-lg p-5"
         onSubmit={(event) => {
           event.preventDefault();
           if (canStart) {
@@ -65,6 +70,70 @@ export function PreflightTutorialModal({
             <div className="rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm font-black text-cyan-100">
               {captainLabel}
             </div>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-lg border border-cyan-300/15 bg-slate-950/45 p-4">
+          <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-black text-slate-50">
+                <Plane className="h-4 w-4 text-cyan-300" />
+                选择本次飞行机型
+              </div>
+              <p className="mt-1 text-xs text-slate-400">不同飞机会改变起飞速度、油门响应、滚转速度和姿态惯性。</p>
+            </div>
+            <div className="text-xs font-bold text-cyan-200">{getAircraftPerformanceProfile(aircraft).feelSummary}</div>
+          </div>
+
+          <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            {aircraftOptions.map((option) => {
+              const selected = option.id === aircraft.id;
+              const feelStats = getAircraftFeelStats(option);
+              const profile = getAircraftPerformanceProfile(option);
+
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={`rounded-lg border p-3 text-left transition ${
+                    selected
+                      ? "border-cyan-300/75 bg-cyan-300/10"
+                      : "border-sky-300/15 bg-slate-950/35 hover:border-cyan-300/45"
+                  }`}
+                  onClick={() => onAircraftChange(option.id)}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-xs font-bold uppercase tracking-[0.16em] text-cyan-300">{option.type}</div>
+                      <h3 className="mt-1 font-black text-slate-50">{option.name}</h3>
+                    </div>
+                    <span
+                      className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border"
+                      style={{ borderColor: option.accentColor, backgroundColor: `${option.accentColor}22` }}
+                    >
+                      <Plane className="h-5 w-5" style={{ color: option.accentColor }} />
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs leading-5 text-slate-400">{profile.handlingHint}</p>
+                  <div className="mt-3 grid gap-2">
+                    {feelStats.map((stat) => (
+                      <div key={stat.label}>
+                        <div className="flex justify-between gap-2 text-[11px] font-bold text-slate-300">
+                          <span>{stat.label}</span>
+                          <span>{stat.text}</span>
+                        </div>
+                        <div className="mt-1 h-1.5 rounded-full bg-slate-800">
+                          <div
+                            className="h-full rounded-full bg-cyan-300"
+                            style={{ width: `${stat.value}%`, backgroundColor: option.accentColor }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
 

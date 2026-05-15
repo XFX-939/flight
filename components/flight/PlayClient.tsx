@@ -28,6 +28,7 @@ import {
   saveFlightRecord,
   setQualitySetting,
   setPlayerName as persistPlayerName,
+  setSelectedAircraftId,
   setSelectedMissionId
 } from "@/lib/flightStorage";
 import { FlightHUD } from "@/components/flight/FlightHUD";
@@ -107,6 +108,10 @@ export function PlayClient() {
   const controlsEnabled =
     ready && !showTutorial && !paused && result === false && !displayState.crashed && !displayState.missionCompleted;
   const active = ready && !showTutorial && !paused && result === false;
+  const selectableAircraft = useMemo(
+    () => aircraftList.filter((item) => mission.aircraftAllowed.includes(item.id)),
+    [mission.aircraftAllowed]
+  );
 
   useEffect(() => {
     const missionId = queryMission.length > 0 ? queryMission : getSelectedMissionId();
@@ -231,6 +236,16 @@ export function PlayClient() {
     setQualitySetting(value);
   }, []);
 
+  const handleAircraftChange = useCallback((aircraftId: string) => {
+    const nextAircraft = getAircraftById(aircraftId);
+    setAircraft(nextAircraft);
+    setSelectedAircraftId(nextAircraft.id);
+    controlsRef.current = { ...defaultControls };
+    finishLockRef.current = false;
+    setResult(false);
+    setPaused(false);
+  }, []);
+
   const handleStartFlight = useCallback((value: string) => {
     const normalizedName = normalizePlayerName(value);
     setPlayerName(normalizedName);
@@ -310,9 +325,11 @@ export function PlayClient() {
       {ready && showTutorial && result === false ? (
         <PreflightTutorialModal
           aircraft={aircraft}
+          aircraftOptions={selectableAircraft}
           mission={mission}
           captainName={playerName}
           onCaptainNameChange={setPlayerName}
+          onAircraftChange={handleAircraftChange}
           onStart={handleStartFlight}
         />
       ) : null}
