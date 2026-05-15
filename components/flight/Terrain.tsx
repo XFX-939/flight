@@ -7,6 +7,11 @@ type TerrainProps = {
   quality: QualitySetting;
 };
 
+const TERRAIN_BASE_Y = -1.2;
+const FIELD_Y = -0.72;
+const RIVER_Y = -0.48;
+const BAY_Y = -0.42;
+
 export function Terrain({ quality }: TerrainProps) {
   const mountains = useMemo(
     () =>
@@ -33,23 +38,23 @@ export function Terrain({ quality }: TerrainProps) {
 
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.18, 4200]} renderOrder={0}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, TERRAIN_BASE_Y, 4200]} renderOrder={0}>
         <planeGeometry args={[18000, 26000]} />
-        <meshStandardMaterial color="#17311f" roughness={0.92} depthWrite={false} />
+        <meshStandardMaterial color="#17311f" roughness={0.92} />
       </mesh>
       {fields.map((field) => (
-        <mesh key={`${field.x}-${field.z}`} rotation={[-Math.PI / 2, 0, 0]} position={[field.x, -0.155, field.z]} renderOrder={1}>
+        <mesh key={`${field.x}-${field.z}`} rotation={[-Math.PI / 2, 0, 0]} position={[field.x, FIELD_Y, field.z]} renderOrder={1}>
           <planeGeometry args={[520, 620]} />
-          <meshStandardMaterial color={field.color} roughness={0.94} polygonOffset polygonOffsetFactor={1} polygonOffsetUnits={1} />
+          <meshStandardMaterial color={field.color} roughness={0.94} />
         </mesh>
       ))}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-1180, -0.08, 4100]} renderOrder={1}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-1180, RIVER_Y, 4100]} renderOrder={2}>
         <planeGeometry args={[760, 15400]} />
-        <meshStandardMaterial color="#0e7490" roughness={0.48} metalness={0.08} polygonOffset polygonOffsetFactor={1} polygonOffsetUnits={1} />
+        <meshStandardMaterial color="#0e7490" roughness={0.48} metalness={0.08} />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[1600, -0.07, 6200]} renderOrder={1}>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[1600, BAY_Y, 6200]} renderOrder={2}>
         <planeGeometry args={[2600, 5200]} />
-        <meshStandardMaterial color="#0f766e" roughness={0.52} metalness={0.05} polygonOffset polygonOffsetFactor={1} polygonOffsetUnits={1} />
+        <meshStandardMaterial color="#0f766e" roughness={0.52} metalness={0.05} />
       </mesh>
       {mountains.map((mountain) => (
         <mesh key={`${mountain.x}-${mountain.z}`} position={[mountain.x, mountain.height / 2 - 8, mountain.z]} castShadow receiveShadow>

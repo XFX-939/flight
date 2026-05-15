@@ -28,6 +28,11 @@ type RoadSpec = {
   rotation: number;
 };
 
+const CITY_WATER_Y = -0.24;
+const CITY_SURFACE_Y = 0.26;
+const CITY_DISTRICT_Y = -0.025;
+const CITY_ROAD_Y = 0.035;
+
 function cityCount(profile: AirportCityProfile, quality: QualitySetting): number {
   const density = profile.density === "high" ? 1 : profile.density === "medium" ? 0.72 : 0.44;
   const qualityScale = quality === "high" ? 260 : quality === "medium" ? 170 : 94;
@@ -174,21 +179,21 @@ export function CityScape({ airport, quality }: CityScapeProps) {
   return (
     <group>
       {profile.water !== "none" ? (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[waterX, -0.045, profile.center.z - 140]} renderOrder={1}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[waterX, CITY_WATER_Y, profile.center.z - 140]} renderOrder={2}>
           <planeGeometry args={[waterWidth, waterDepth]} />
-          <meshStandardMaterial color="#0e7490" roughness={0.46} metalness={0.08} polygonOffset polygonOffsetFactor={1} polygonOffsetUnits={1} />
+          <meshStandardMaterial color="#0e7490" roughness={0.46} metalness={0.08} />
         </mesh>
       ) : null}
 
-      <group position={[profile.center.x, 0.14, profile.center.z]} renderOrder={2}>
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.012, 0]}>
+      <group position={[profile.center.x, CITY_SURFACE_Y, profile.center.z]}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, CITY_DISTRICT_Y, 0]} renderOrder={3}>
           <planeGeometry args={[districtSpan, districtSpan]} />
-          <meshBasicMaterial color="#0b1220" transparent opacity={0.24} />
+          <meshBasicMaterial color="#0b1220" transparent opacity={0.24} depthWrite={false} />
         </mesh>
         {roads.map((road) => (
-          <mesh key={road.key} rotation={[-Math.PI / 2, 0, road.rotation]} position={[road.x, 0, road.z]}>
+          <mesh key={road.key} rotation={[-Math.PI / 2, 0, road.rotation]} position={[road.x, CITY_ROAD_Y, road.z]} renderOrder={4}>
             <planeGeometry args={[road.width, road.length]} />
-            <meshBasicMaterial color={road.width > 12 ? "#172033" : "#111827"} transparent opacity={road.width > 12 ? 0.82 : 0.68} />
+            <meshBasicMaterial color={road.width > 12 ? "#172033" : "#111827"} transparent opacity={road.width > 12 ? 0.82 : 0.68} depthWrite={false} />
           </mesh>
         ))}
       </group>
@@ -236,9 +241,9 @@ export function CityScape({ airport, quality }: CityScapeProps) {
         <cylinderGeometry args={[4, 18, 920, 24, 1, true]} />
         <meshBasicMaterial color={profile.landmarkColor} transparent opacity={quality === "low" ? 0.1 : 0.18} depthWrite={false} />
       </mesh>
-      <mesh position={[profile.center.x, 6, profile.center.z]} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh position={[profile.center.x, 6, profile.center.z]} rotation={[Math.PI / 2, 0, 0]} renderOrder={5}>
         <torusGeometry args={[180, 3, 8, 72]} />
-        <meshBasicMaterial color={profile.landmarkColor} transparent opacity={0.42} />
+        <meshBasicMaterial color={profile.landmarkColor} transparent opacity={0.42} depthWrite={false} />
       </mesh>
       <pointLight position={[profile.center.x, 210, profile.center.z]} color={profile.landmarkColor} intensity={quality === "high" ? 0.9 : 0.35} distance={quality === "low" ? 240 : 420} />
     </group>
