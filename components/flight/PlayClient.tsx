@@ -17,6 +17,7 @@ import { getAirportById } from "@/data/airports";
 import { getMissionById } from "@/data/missions";
 import { useFlightState } from "@/hooks/useFlightState";
 import { useKeyboardFlightControls } from "@/hooks/useKeyboardFlightControls";
+import { generateFlightDebrief } from "@/lib/flightDebrief";
 import { scoreFlight } from "@/lib/flightScoring";
 import {
   getPlayerName,
@@ -196,7 +197,18 @@ export function PlayClient() {
       metricsRef.current.crashed = metricsRef.current.crashed || stateRef.current.crashed;
       metricsRef.current.missionCompleted = metricsRef.current.missionCompleted || stateRef.current.missionCompleted;
 
-      const score = scoreFlight(mission, aircraft, airport, stateRef.current, metricsRef.current);
+      const baseScore = scoreFlight(mission, aircraft, airport, stateRef.current, metricsRef.current);
+      const debrief = generateFlightDebrief({
+        playerName: normalizePlayerName(playerName),
+        mission,
+        aircraft,
+        airport,
+        score: baseScore,
+        state: stateRef.current,
+        metrics: metricsRef.current
+      });
+      const score: FlightScore = { ...baseScore, debrief };
+
       saveFlightRecord({
         id: createRecordId(),
         playerName: normalizePlayerName(playerName),
@@ -211,6 +223,7 @@ export function PlayClient() {
         flightTime: score.flightTime,
         landingQuality: stateRef.current.landingQuality,
         crashed: score.crashed,
+        debrief,
         createdAt: new Date().toISOString()
       });
       setDisplayState(cloneState(stateRef.current));

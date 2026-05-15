@@ -184,6 +184,18 @@ export type FlightScore = {
   hardLanding: boolean;
   crashed: boolean;
   missionCompleted: boolean;
+  debrief?: FlightDebrief;
+};
+
+export type FlightDebrief = {
+  tone: "success" | "steady" | "training" | "failed";
+  title: string;
+  subtitle: string;
+  summary: string;
+  encouragement: string;
+  highlights: string[];
+  improvements: string[];
+  nextFocus: string;
 };
 
 export type FlightRecord = {
@@ -200,5 +212,6 @@ export type FlightRecord = {
   flightTime: number;
   landingQuality: LandingQuality;
   crashed: boolean;
+  debrief?: FlightDebrief;
   createdAt: string;
 };
