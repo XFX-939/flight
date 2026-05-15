@@ -2,6 +2,7 @@
 
 import { AlertTriangle, CheckCircle2, Pause, RadioTower } from "lucide-react";
 import type { Aircraft, Airport, FlightRuntimeState, Mission, ViewMode } from "@/types/flight";
+import { getAirportGameplayProfile } from "@/lib/airportGameplay";
 import { getFlightAdvisories, type FlightAdvisorySeverity } from "@/lib/flightAdvisory";
 import { safeRound } from "@/lib/math";
 import { AttitudeIndicator } from "@/components/flight/AttitudeIndicator";
@@ -59,7 +60,8 @@ export function FlightHUD({ state, aircraft, airport, mission, viewMode, onPause
     { label: "V/S", value: `${safeRound(state.verticalSpeed)} fpm` },
     { label: "THR", value: `${safeRound(state.throttle * 100)}%` }
   ];
-  const advisories = getFlightAdvisories(state, aircraft, mission);
+  const airportProfile = getAirportGameplayProfile(airport, aircraft);
+  const advisories = getFlightAdvisories(state, aircraft, mission, airport);
   const primaryAdvisory = advisories[0];
   const primaryStyle = advisoryStyles[primaryAdvisory.severity];
   const AdvisoryIcon = primaryAdvisory.severity === "danger" || primaryAdvisory.severity === "warning" ? AlertTriangle : CheckCircle2;
@@ -157,7 +159,7 @@ export function FlightHUD({ state, aircraft, airport, mission, viewMode, onPause
 
       <div className="hud-panel pointer-events-none absolute left-3 top-56 rounded-lg px-3 py-2 text-xs text-slate-300 md:hidden">
         <RadioTower className="mr-1 inline h-3 w-3 text-cyan-300" />
-        {mission.name} · {airport.name}
+        {mission.name} · {airport.name} · XW {safeRound(airportProfile.wind.crosswindKnots)} kt
       </div>
     </div>
   );

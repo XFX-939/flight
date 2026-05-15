@@ -24,6 +24,10 @@ function createMetrics(): FlightMetrics {
     touchdownRecorded: false,
     takeoffDistance: 0,
     takeoffRecorded: false,
+    runwayOverrun: false,
+    crosswindWarnings: 0,
+    maxCrosswind: 0,
+    airportDifficulty: 0,
     smoothnessPenalty: 0,
     headingDeviationTotal: 0,
     headingSamples: 0
@@ -41,7 +45,7 @@ function createInitialState(aircraft: Aircraft, airport: Airport, mission: Missi
       : 0;
   const startZ = landingStart ? -3600 : -airport.runwayLength / 2 + 160;
   const startY = landingStart || freeCruise ? startAltitudeFt * METER_PER_FT : 1.2;
-  const yaw = degToRad(airport.runwayHeading);
+  const yaw = 0;
 
   return {
     position: { x: 0, y: startY, z: startZ },

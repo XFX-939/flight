@@ -13,6 +13,12 @@ import type {
 } from "@/types/flight";
 import { getAircraftPerformanceProfile } from "@/lib/aircraftPerformance";
 import {
+  getAirportGameplayProfile,
+  getMissionTargetHeading,
+  getRunwayRemainingMeters,
+  getWindComponents
+} from "@/lib/airportGameplay";
+import {
   FT_PER_METER,
   KNOTS_PER_MPS,
   METER_PER_FT,
@@ -37,6 +43,7 @@ type PhysicsOptions = {
 const RUNWAY_WIDTH = 62;
 const GROUND_Y = 1.2;
 const ROUTE_TARGET = { x: 2200, z: 9200 };
+const RUNWAY_OVERRUN_BUFFER = 80;
 
 function handlingFactor(aircraft: Aircraft): number {
   if (aircraft.handling === "较灵敏") {
@@ -80,7 +87,7 @@ export function useAircraftPhysics({
   controlsRef,
   active
 }: PhysicsOptions) {
-  const ratesRef = useRef({ pitch: 0, roll: 0, yaw: 0, lastPitch: 0, lastRoll: 0 });
+  const ratesRef = useRef({ pitch: 0, roll: 0, yaw: 0, lastPitch: 0, lastRoll: 0, crosswindActive: false });
 
   useFrame((_, frameDelta) => {
     if (!active) {
@@ -98,9 +105,13 @@ export function useAircraftPhysics({
       return;
     }
 
+    const airportProfile = getAirportGameplayProfile(airport, aircraft);
+    const missionTargetHeading = getMissionTargetHeading(mission, airport);
+    metrics.airportDifficulty = airportProfile.totalDifficulty;
+
     const maxSpeedMps = Math.max(aircraft.maxSpeed * MPS_PER_KNOT, 1);
     const stallSpeed = aircraft.stallSpeed;
-    const takeoffSpeed = aircraft.takeoffSpeed;
+    const takeoffSpeed = airportProfile.requiredTakeoffSpeed;
     const speedMps = clamp(state.airspeed * MPS_PER_KNOT, 0, maxSpeedMps * 1.08);
     const handling = handlingFactor(aircraft);
     const stability = stabilityFactor(aircraft);
@@ -137,22 +148,31 @@ export function useAircraftPhysics({
       state.pitch = lerp(state.pitch, 0.02, dt * profile.trimRate * stability);
     }
 
-    state.heading = normalizeHeading(radToDeg(state.yaw));
+    state.heading = normalizeHeading(airport.runwayHeading + radToDeg(state.yaw));
+    const wind = getWindComponents(airport, state.heading);
+    const windDemand = wind.crosswindKnots > 11 && state.altitude < 1500 && state.airspeed > aircraft.stallSpeed;
+    if (windDemand && !ratesRef.current.crosswindActive) {
+      metrics.crosswindWarnings += 1;
+    }
+    ratesRef.current.crosswindActive = windDemand;
+    metrics.maxCrosswind = Math.max(metrics.maxCrosswind, wind.crosswindKnots);
 
-    const thrustAccel = state.throttle * (7.2 + aircraft.throttleResponse * 5.2) * profile.thrustScale;
+    const effectiveAirspeed = clamp(state.airspeed + wind.headwindKnots * 0.45, 0, aircraft.maxSpeed * 1.12);
+    const thrustAccel = state.throttle * (7.2 + aircraft.throttleResponse * 5.2) * profile.thrustScale * airportProfile.densityFactor;
     const profileDrag = (speedMps / maxSpeedMps) * (speedMps / maxSpeedMps) * 7.8 * profile.dragScale;
     const pitchDrag = Math.max(0, state.pitch) * 4.5 + Math.abs(state.roll) * 0.7;
-    const totalDrag = profileDrag + flapDrag * 2.4 + gearDrag * 2 + pitchDrag + brakeDrag;
+    const airportRollDrag = state.onGround ? (airportProfile.takeoffRollScale - 1) * 4.2 : 0;
+    const totalDrag = Math.max(0, profileDrag + flapDrag * 2.4 + gearDrag * 2 + pitchDrag + brakeDrag + airportRollDrag);
     let nextSpeedMps = clamp(speedMps + (thrustAccel - totalDrag) * dt, 0, maxSpeedMps * 1.08);
 
     const stallThreshold = stallSpeed * (state.pitch > profile.stallPitchThreshold ? 1.1 : 0.94);
-    state.stalled = !state.onGround && state.airspeed < stallThreshold && state.pitch > 0.04;
+    state.stalled = !state.onGround && effectiveAirspeed < stallThreshold && state.pitch > 0.04;
     if (state.stalled && !metrics.lastStalled) {
       metrics.stallWarnings += 1;
     }
     metrics.lastStalled = state.stalled;
 
-    const liftRatio = (state.airspeed / Math.max(stallSpeed, 1)) ** 2;
+    const liftRatio = (effectiveAirspeed / Math.max(stallSpeed, 1)) ** 2;
     const rollLift = Math.cos(Math.abs(state.roll) * 0.74);
     let verticalMps = 0;
 
@@ -161,7 +181,7 @@ export function useAircraftPhysics({
       if (state.airspeed >= takeoffSpeed * 0.96 && state.pitch > 0.055) {
         state.onGround = false;
         state.pitch = Math.max(state.pitch, 0.11);
-        verticalMps = profile.liftoffBoost + Math.sin(state.pitch) * nextSpeedMps * 0.5;
+        verticalMps = profile.liftoffBoost * airportProfile.densityFactor + Math.sin(state.pitch) * nextSpeedMps * 0.5;
         if (!metrics.takeoffRecorded) {
           metrics.takeoffDistance = Math.max(0, state.position.z + airport.runwayLength / 2);
           metrics.takeoffRecorded = true;
@@ -169,7 +189,7 @@ export function useAircraftPhysics({
       }
     } else {
       const pitchClimb = Math.sin(state.pitch) * nextSpeedMps * 0.72;
-      const liftClimb = (liftRatio * flapLift * rollLift * profile.liftScale - 1.02) * 2.6;
+      const liftClimb = (liftRatio * flapLift * rollLift * profile.liftScale * airportProfile.densityFactor - 1.02) * 2.6;
       verticalMps = pitchClimb + liftClimb - (state.gearDown ? 0.6 : 0);
       if (state.stalled) {
         verticalMps -= 9.5;
@@ -180,14 +200,17 @@ export function useAircraftPhysics({
     }
 
     const forwardMps = Math.max(0, nextSpeedMps * Math.cos(state.pitch));
-    const crosswindHeading = ((airport.windDirection - state.heading + 540) % 360) - 180;
-    const windCrossMps = Math.sin((crosswindHeading * Math.PI) / 180) * airport.windSpeed * 0.09;
+    const windToRad = ((airport.windDirection - airport.runwayHeading + 180) * Math.PI) / 180;
+    const windMps = airport.windSpeed * MPS_PER_KNOT;
+    const windInfluence = state.onGround ? 0.11 : 0.28;
+    const windVectorX = Math.sin(windToRad) * windMps * windInfluence;
+    const windVectorZ = Math.cos(windToRad) * windMps * windInfluence;
     const dirX = Math.sin(state.yaw);
     const dirZ = Math.cos(state.yaw);
 
-    state.velocity.x = dirX * forwardMps + windCrossMps;
+    state.velocity.x = dirX * forwardMps + windVectorX;
     state.velocity.y = verticalMps;
-    state.velocity.z = dirZ * forwardMps;
+    state.velocity.z = dirZ * forwardMps + windVectorZ * (state.onGround ? 0.55 : 1);
     state.position.x += state.velocity.x * dt;
     state.position.z += state.velocity.z * dt;
     state.position.y += state.velocity.y * dt;
@@ -240,17 +263,29 @@ export function useAircraftPhysics({
         ? Math.hypot(ROUTE_TARGET.x - state.position.x, ROUTE_TARGET.z - state.position.z)
         : Math.hypot(state.position.x, state.position.z);
 
+    const runwayRemaining = getRunwayRemainingMeters(airport, state.position.z);
     const offRunway = state.onGround && Math.abs(state.position.x) > RUNWAY_WIDTH / 2 && state.airspeed > 28;
+    const runwayOverrun =
+      state.onGround && state.position.z > airport.runwayLength / 2 + RUNWAY_OVERRUN_BUFFER && state.airspeed > 18;
     const steepLow = !state.onGround && state.altitude < 160 && Math.abs(state.roll) > 0.95 && state.verticalSpeed < -650;
-    if (offRunway || steepLow) {
+    if (offRunway || runwayOverrun || steepLow) {
       state.crashed = true;
       metrics.crashed = true;
+      metrics.runwayOverrun = metrics.runwayOverrun || runwayOverrun;
       state.landingQuality = "坠毁";
       state.warning = "CRASH";
     }
 
-    if (state.stalled) {
+    if (state.crashed) {
+      state.warning = "CRASH";
+    } else if (state.stalled) {
       state.warning = "STALL";
+    } else if (state.onGround && !metrics.takeoffRecorded && runwayRemaining < airport.runwayLength * 0.18 && state.airspeed < takeoffSpeed * 0.95) {
+      state.warning = "跑道剩余不足";
+    } else if (wind.crosswindKnots > 12 && state.altitude < 1200 && state.airspeed > aircraft.stallSpeed) {
+      state.warning = "CROSSWIND";
+    } else if (airport.visibility < 7 && !state.onGround && state.altitude < 1200) {
+      state.warning = "LOW VIS";
     } else if (Math.abs(state.runwayOffset) > 36 && state.altitude < 800) {
       state.warning = "跑道偏离";
     } else if (!state.gearDown && state.altitude < 700 && state.airspeed < aircraft.takeoffSpeed * 1.8) {
@@ -260,17 +295,23 @@ export function useAircraftPhysics({
     }
 
     if (mission.type === "takeoff-training") {
-      const headingOk = headingDelta(state.heading, mission.targetHeading) <= 10;
-      const speedOk = state.airspeed >= aircraft.takeoffSpeed * 1.12;
+      const headingOk = headingDelta(state.heading, missionTargetHeading) <= 10;
+      const speedOk = state.airspeed >= takeoffSpeed * 1.1;
       state.missionStatus = state.altitude >= mission.targetAltitude
         ? headingOk
           ? "训练完成，爬升稳定"
           : "高度达标，修正航向"
         : state.onGround
-          ? state.airspeed >= aircraft.takeoffSpeed * 0.9
+          ? runwayRemaining < airport.runwayLength * 0.18 && state.airspeed < takeoffSpeed * 0.95
+            ? "跑道剩余不足，速度不够请刹车中止"
+            : state.airspeed >= takeoffSpeed * 0.9
             ? "速度已到，按住 S / ↓ 或 PULL 抬机头"
-            : "加油门滑跑，达到起飞速度后轻拉杆"
-          : "保持爬升，目标 1500 ft";
+            : wind.crosswindKnots > 10
+              ? "满油门滑跑，注意侧风修正"
+              : "加油门滑跑，达到起飞速度后轻拉杆"
+          : airportProfile.densityFactor < 0.95
+            ? "高海拔爬升较慢，保持速度和小角度"
+            : "保持爬升，目标 1500 ft";
       if (state.altitude >= mission.targetAltitude && headingOk && speedOk && !state.stalled) {
         state.missionCompleted = true;
         metrics.missionCompleted = true;
@@ -282,7 +323,11 @@ export function useAircraftPhysics({
         ? state.airspeed < 35
           ? "降落训练完成"
           : "保持刹车，减速到安全速度"
-        : "沿中心线下降，襟翼和起落架保持放下";
+        : wind.crosswindKnots > 10
+          ? "侧风进近：保持中心线，落地前小幅修正"
+          : airport.visibility < 7
+            ? "低能见度进近：盯住跑道灯和下降率"
+            : "沿中心线下降，襟翼和起落架保持放下";
       if (state.onGround && metrics.touchdownRecorded && state.airspeed < 35 && !state.crashed) {
         state.missionCompleted = true;
         metrics.missionCompleted = true;
@@ -297,7 +342,7 @@ export function useAircraftPhysics({
       const cruiseOk = Math.abs(state.altitude - mission.targetAltitude) < 650;
       state.missionStatus = state.distanceToTarget > 1000
         ? cruiseOk
-          ? "高度稳定，继续前往 Bay City"
+          ? `高度稳定，保持航向 ${missionTargetHeading.toString().padStart(3, "0")}°`
           : "调整到指定巡航高度"
         : state.onGround
           ? state.airspeed < 45
@@ -317,7 +362,7 @@ export function useAircraftPhysics({
     metrics.speedTotal += state.airspeed;
     metrics.averageSpeed = metrics.speedTotal / Math.max(1, metrics.speedSamples);
     metrics.smoothnessPenalty += Math.abs(state.pitch - ratesRef.current.lastPitch) * 28 + Math.abs(state.roll - ratesRef.current.lastRoll) * 16;
-    metrics.headingDeviationTotal += headingDelta(state.heading, mission.targetHeading);
+    metrics.headingDeviationTotal += headingDelta(state.heading, missionTargetHeading);
     metrics.headingSamples += 1;
     ratesRef.current.lastPitch = state.pitch;
     ratesRef.current.lastRoll = state.roll;

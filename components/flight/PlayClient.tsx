@@ -196,7 +196,7 @@ export function PlayClient() {
       metricsRef.current.crashed = metricsRef.current.crashed || stateRef.current.crashed;
       metricsRef.current.missionCompleted = metricsRef.current.missionCompleted || stateRef.current.missionCompleted;
 
-      const score = scoreFlight(mission, stateRef.current, metricsRef.current);
+      const score = scoreFlight(mission, aircraft, airport, stateRef.current, metricsRef.current);
       saveFlightRecord({
         id: createRecordId(),
         playerName: normalizePlayerName(playerName),
@@ -325,6 +325,7 @@ export function PlayClient() {
       {ready && showTutorial && result === false ? (
         <PreflightTutorialModal
           aircraft={aircraft}
+          airport={airport}
           aircraftOptions={selectableAircraft}
           mission={mission}
           captainName={playerName}

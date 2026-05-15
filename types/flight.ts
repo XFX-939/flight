@@ -157,6 +157,10 @@ export type FlightMetrics = {
   touchdownRecorded: boolean;
   takeoffDistance: number;
   takeoffRecorded: boolean;
+  runwayOverrun: boolean;
+  crosswindWarnings: number;
+  maxCrosswind: number;
+  airportDifficulty: number;
   smoothnessPenalty: number;
   headingDeviationTotal: number;
   headingSamples: number;
@@ -173,6 +177,10 @@ export type FlightScore = {
   landingCenterlineOffset: number;
   touchdownDistance: number;
   stallWarnings: number;
+  crosswindWarnings: number;
+  runwayOverrun: boolean;
+  airportDifficulty: number;
+  weatherPenalty: number;
   hardLanding: boolean;
   crashed: boolean;
   missionCompleted: boolean;

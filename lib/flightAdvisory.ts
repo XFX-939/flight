@@ -1,4 +1,5 @@
-import type { Aircraft, FlightRuntimeState, Mission } from "@/types/flight";
+import type { Aircraft, Airport, FlightRuntimeState, Mission } from "@/types/flight";
+import { getAirportGameplayProfile, getMissionTargetHeading, getRunwayRemainingMeters, getWindComponents } from "@/lib/airportGameplay";
 import { normalizeHeading, safeRound } from "@/lib/math";
 
 export type FlightAdvisorySeverity = "danger" | "warning" | "info" | "success";
@@ -40,20 +41,24 @@ function addAdvisory(advisories: FlightAdvisory[], draft: AdvisoryDraft): void {
 export function getFlightAdvisories(
   state: FlightRuntimeState,
   aircraft: Aircraft,
-  mission: Mission
+  mission: Mission,
+  airport: Airport
 ): FlightAdvisory[] {
   const advisories: FlightAdvisory[] = [];
+  const airportProfile = getAirportGameplayProfile(airport, aircraft);
   const airspeed = Math.max(0, finite(state.airspeed));
   const altitude = Math.max(0, finite(state.altitude));
   const verticalSpeed = finite(state.verticalSpeed);
   const throttlePercent = safeRound(finite(state.throttle) * 100);
   const targetSpeed = positive(mission.targetSpeed, aircraft.takeoffSpeed);
   const targetAltitude = Math.max(0, finite(mission.targetAltitude));
-  const targetHeading = normalizeHeading(finite(mission.targetHeading));
+  const targetHeading = getMissionTargetHeading(mission, airport);
   const headingError = signedHeadingError(targetHeading, finite(state.heading));
   const headingErrorAbs = Math.abs(headingError);
   const runwayOffset = finite(state.runwayOffset);
   const runwayOffsetAbs = Math.abs(runwayOffset);
+  const runwayRemaining = getRunwayRemainingMeters(airport, state.position.z);
+  const wind = getWindComponents(airport, state.heading);
   const isLandingMission = mission.type === "landing-training";
   const isTakeoffMission = mission.type === "takeoff-training";
   const isRouteMission = mission.type === "route-challenge";
@@ -103,16 +108,27 @@ export function getFlightAdvisories(
   }
 
   if (state.onGround && !state.missionCompleted) {
-    if ((isTakeoffMission || isRouteMission || mission.type === "free-flight") && airspeed < aircraft.takeoffSpeed * 0.92) {
+    if (runwayRemaining < airport.runwayLength * 0.18 && airspeed < airportProfile.requiredTakeoffSpeed * 0.95 && airspeed > 24) {
+      addAdvisory(advisories, {
+        id: "runway-remaining",
+        severity: "danger",
+        title: "跑道剩余不足",
+        message: "当前机场跑道余量不够，速度不足请刹车中止。",
+        value: `${safeRound(runwayRemaining)} m`,
+        priority: 6
+      });
+    }
+
+    if ((isTakeoffMission || isRouteMission || mission.type === "free-flight") && airspeed < airportProfile.requiredTakeoffSpeed * 0.92) {
       addAdvisory(advisories, {
         id: "takeoff-roll",
         severity: "info",
         title: "继续滑跑加速",
-        message: `油门保持 100%，速度到 ${aircraft.takeoffSpeed} kt 后再轻拉杆。`,
-        value: `${safeRound(airspeed)}/${aircraft.takeoffSpeed} kt`,
+        message: `油门保持 100%，本机场建议到 ${airportProfile.requiredTakeoffSpeed} kt 后再轻拉杆。`,
+        value: `${safeRound(airspeed)}/${airportProfile.requiredTakeoffSpeed} kt`,
         priority: 30
       });
-    } else if ((isTakeoffMission || isRouteMission || mission.type === "free-flight") && airspeed < aircraft.takeoffSpeed * 1.2) {
+    } else if ((isTakeoffMission || isRouteMission || mission.type === "free-flight") && airspeed < airportProfile.requiredTakeoffSpeed * 1.2) {
       addAdvisory(advisories, {
         id: "rotate",
         severity: "success",
@@ -122,6 +138,41 @@ export function getFlightAdvisories(
         priority: 22
       });
     }
+  }
+
+  if (wind.crosswindKnots > 11 && (airborne || airspeed > 35) && altitude < 1600) {
+    addAdvisory(advisories, {
+      id: "crosswind",
+      severity: wind.crosswindKnots > 16 ? "warning" : "info",
+      title: wind.crosswindFrom === "right" ? "右侧风修正" : "左侧风修正",
+      message: wind.crosswindFrom === "right"
+        ? "风从右侧来，保持跑道中心线，必要时向右压一点机翼。"
+        : "风从左侧来，保持跑道中心线，必要时向左压一点机翼。",
+      value: `${safeRound(wind.crosswindKnots)} kt`,
+      priority: wind.crosswindKnots > 16 ? 11 : 24
+    });
+  }
+
+  if (airportProfile.wind.tailwindKnots > 4 && state.onGround && !state.missionCompleted) {
+    addAdvisory(advisories, {
+      id: "tailwind",
+      severity: "warning",
+      title: "顺风增加滑跑",
+      message: "本场顺风会拉长起飞距离，保持满油门并盯住跑道剩余。",
+      value: `${safeRound(airportProfile.wind.tailwindKnots)} kt`,
+      priority: 20
+    });
+  }
+
+  if (airport.visibility < 7 && airborne && altitude < 1400) {
+    addAdvisory(advisories, {
+      id: "low-visibility",
+      severity: "info",
+      title: "能见度偏低",
+      message: "更早对准跑道灯，避免到低高度再大幅修正。",
+      value: `${airport.visibility} mi`,
+      priority: 31
+    });
   }
 
   if (airborne) {

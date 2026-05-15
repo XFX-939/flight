@@ -3,6 +3,8 @@
 import { Check, MapPinned, Play } from "lucide-react";
 import Link from "next/link";
 import type { Airport } from "@/types/flight";
+import { defaultAircraft } from "@/data/aircraft";
+import { getAirportGameplayProfile } from "@/lib/airportGameplay";
 import { setSelectedAirportId } from "@/lib/flightStorage";
 
 type AirportCardProps = {
@@ -12,6 +14,8 @@ type AirportCardProps = {
 };
 
 export function AirportCard({ airport, selected = false, onSelect }: AirportCardProps) {
+  const profile = getAirportGameplayProfile(airport, defaultAircraft);
+
   const handleSelect = () => {
     setSelectedAirportId(airport.id);
     onSelect?.(airport.id);
@@ -58,7 +62,15 @@ export function AirportCard({ airport, selected = false, onSelect }: AirportCard
             <strong className="text-slate-100">{airport.cityProfile.cityName}</strong>
           </div>
         ) : null}
+        <div className="rounded-lg bg-slate-950/40 p-3">
+          <span className="block text-slate-500">玩法影响</span>
+          <strong className="text-slate-100">{profile.challengeLabel}</strong>
+        </div>
       </div>
+
+      <p className="mt-4 rounded-lg border border-amber-300/15 bg-amber-300/10 px-3 py-2 text-xs leading-5 text-amber-100">
+        {profile.challengeSummary}，会影响抬轮速度、跑道剩余、侧风漂移和降落评分。
+      </p>
 
       <div className="mt-5 flex gap-3">
         <button type="button" className="button-secondary flex-1" onClick={handleSelect}>

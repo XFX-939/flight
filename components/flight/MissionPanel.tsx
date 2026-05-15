@@ -1,7 +1,8 @@
 "use client";
 
-import { Flag, MapPin, Square } from "lucide-react";
+import { Flag, MapPin, Square, Wind } from "lucide-react";
 import type { Aircraft, Airport, FlightRuntimeState, Mission } from "@/types/flight";
+import { getAirportGameplayProfile, getMissionTargetHeading } from "@/lib/airportGameplay";
 import { formatDuration, safeRound } from "@/lib/math";
 
 type MissionPanelProps = {
@@ -13,6 +14,9 @@ type MissionPanelProps = {
 };
 
 export function MissionPanel({ mission, aircraft, airport, state, onEndFlight }: MissionPanelProps) {
+  const airportProfile = getAirportGameplayProfile(airport, aircraft);
+  const targetHeading = getMissionTargetHeading(mission, airport);
+
   return (
     <aside className="hud-panel rounded-lg p-4">
       <div className="flex items-center justify-between gap-3">
@@ -32,7 +36,7 @@ export function MissionPanel({ mission, aircraft, airport, state, onEndFlight }:
         </div>
         <div className="flex items-center justify-between rounded-lg bg-slate-950/45 px-3 py-2">
           <span className="text-slate-400">目标航向</span>
-          <strong>{mission.targetHeading}°</strong>
+          <strong>{targetHeading}°</strong>
         </div>
         <div className="flex items-center justify-between rounded-lg bg-slate-950/45 px-3 py-2">
           <span className="text-slate-400">目标速度</span>
@@ -55,6 +59,13 @@ export function MissionPanel({ mission, aircraft, airport, state, onEndFlight }:
         <div className="flex items-center gap-2">
           <MapPin className="h-3 w-3 text-cyan-300" />
           {airport.name}
+        </div>
+        <div className="flex items-center gap-2">
+          <Wind className="h-3 w-3 text-amber-300" />
+          侧风 {safeRound(airportProfile.wind.crosswindKnots)} kt · 能见度 {airport.visibility} mi
+        </div>
+        <div className="pl-5 text-slate-500">
+          {airportProfile.challengeLabel} · 抬轮 {airportProfile.requiredTakeoffSpeed} kt · 跑道余量 {safeRound(airportProfile.runwayMarginMeters)} m
         </div>
         <div>飞行时间 {formatDuration(state.flightTime)}</div>
       </div>

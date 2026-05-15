@@ -1,12 +1,14 @@
 "use client";
 
-import { ArrowUp, Gamepad2, Gauge, MousePointer2, Plane, PlaneTakeoff, Smartphone, UserRound } from "lucide-react";
-import type { Aircraft, Mission } from "@/types/flight";
+import { ArrowUp, CloudFog, Gamepad2, Gauge, MapPinned, MousePointer2, Plane, PlaneTakeoff, Smartphone, UserRound, Wind } from "lucide-react";
+import type { Aircraft, Airport, Mission } from "@/types/flight";
 import { getAircraftFeelStats, getAircraftPerformanceProfile } from "@/lib/aircraftPerformance";
+import { getAirportGameplayProfile, getMissionTargetHeading } from "@/lib/airportGameplay";
 import { normalizePlayerName } from "@/lib/flightStorage";
 
 type PreflightTutorialModalProps = {
   aircraft: Aircraft;
+  airport: Airport;
   aircraftOptions: Aircraft[];
   mission: Mission;
   captainName: string;
@@ -17,6 +19,7 @@ type PreflightTutorialModalProps = {
 
 export function PreflightTutorialModal({
   aircraft,
+  airport,
   aircraftOptions,
   mission,
   captainName,
@@ -26,6 +29,10 @@ export function PreflightTutorialModal({
 }: PreflightTutorialModalProps) {
   const canStart = captainName.trim().length > 0;
   const captainLabel = canStart ? normalizePlayerName(captainName) : "请输入机长名";
+  const airportProfile = getAirportGameplayProfile(airport, aircraft);
+  const targetHeading = getMissionTargetHeading(mission, airport);
+  const windSide =
+    airportProfile.wind.crosswindFrom === "right" ? "右侧风" : airportProfile.wind.crosswindFrom === "left" ? "左侧风" : "风况平稳";
 
   return (
     <div className="absolute inset-0 z-50 grid place-items-center bg-slate-950/72 p-4 backdrop-blur-sm">
@@ -43,11 +50,11 @@ export function PreflightTutorialModal({
             <div className="text-xs font-bold uppercase tracking-[0.18em] text-cyan-300">Preflight Briefing</div>
             <h2 className="mt-2 text-3xl font-black text-slate-50">起飞前简明教程</h2>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              当前任务：{mission.name} · 当前飞机：{aircraft.name}
+              当前任务：{mission.name} · 当前飞机：{aircraft.name} · 当前机场：{airport.name}
             </p>
           </div>
           <div className="rounded-lg border border-cyan-300/25 bg-cyan-300/10 px-4 py-3 text-sm font-black text-cyan-100">
-            起飞速度 {aircraft.takeoffSpeed} kt
+            建议抬轮 {airportProfile.requiredTakeoffSpeed} kt
           </div>
         </div>
 
@@ -69,6 +76,50 @@ export function PreflightTutorialModal({
             />
             <div className="rounded-lg border border-cyan-300/20 bg-cyan-300/10 px-4 py-3 text-sm font-black text-cyan-100">
               {captainLabel}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-5 rounded-lg border border-cyan-300/15 bg-slate-950/45 p-4">
+          <div className="flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-black text-slate-50">
+                <MapPinned className="h-4 w-4 text-cyan-300" />
+                机场和天气会影响本次飞行
+              </div>
+              <p className="mt-1 text-xs text-slate-400">{airportProfile.challengeLabel} · {airportProfile.challengeSummary}</p>
+            </div>
+            <div className="text-xs font-bold text-cyan-200">目标航向 {targetHeading.toString().padStart(3, "0")}°</div>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-lg bg-slate-950/40 p-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                <PlaneTakeoff className="h-3.5 w-3.5 text-cyan-300" />
+                跑道余量
+              </div>
+              <strong className="mt-1 block text-sm text-slate-50">{Math.round(airportProfile.runwayMarginMeters)} m</strong>
+            </div>
+            <div className="rounded-lg bg-slate-950/40 p-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                <Wind className="h-3.5 w-3.5 text-cyan-300" />
+                侧风
+              </div>
+              <strong className="mt-1 block text-sm text-slate-50">{Math.round(airportProfile.wind.crosswindKnots)} kt {windSide}</strong>
+            </div>
+            <div className="rounded-lg bg-slate-950/40 p-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                <CloudFog className="h-3.5 w-3.5 text-cyan-300" />
+                能见度
+              </div>
+              <strong className="mt-1 block text-sm text-slate-50">{airport.visibility} mi</strong>
+            </div>
+            <div className="rounded-lg bg-slate-950/40 p-3">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-400">
+                <Gauge className="h-3.5 w-3.5 text-cyan-300" />
+                性能
+              </div>
+              <strong className="mt-1 block text-sm text-slate-50">{Math.round(airportProfile.densityFactor * 100)}%</strong>
             </div>
           </div>
         </div>
@@ -150,7 +201,7 @@ export function PreflightTutorialModal({
             <ArrowUp className="h-6 w-6 text-cyan-300" />
             <h3 className="mt-3 font-black text-slate-50">2. 速度到位再拉起</h3>
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              HUD 的 SPD 到 {aircraft.takeoffSpeed} kt 左右后，按住 <strong className="text-slate-100">S / ↓</strong> 或底部 <strong className="text-slate-100">PULL</strong> 抬机头。
+              HUD 的 SPD 到 {airportProfile.requiredTakeoffSpeed} kt 左右后，按住 <strong className="text-slate-100">S / ↓</strong> 或底部 <strong className="text-slate-100">PULL</strong> 抬机头。
               不要一直猛拉，否则会失速。
             </p>
           </div>

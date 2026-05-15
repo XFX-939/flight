@@ -62,6 +62,24 @@ export function FlightResultModal({ score, aircraft, airport, mission, onRestart
             <span className="text-xs text-slate-500">失速警告</span>
             <strong className="block text-slate-50">{score.stallWarnings}</strong>
           </div>
+          <div className="rounded-lg bg-slate-950/45 p-3">
+            <span className="text-xs text-slate-500">侧风修正</span>
+            <strong className="block text-slate-50">{score.crosswindWarnings}</strong>
+          </div>
+          <div className="rounded-lg bg-slate-950/45 p-3">
+            <span className="text-xs text-slate-500">机场难度</span>
+            <strong className="block text-slate-50">{score.airportDifficulty}</strong>
+          </div>
+          <div className="rounded-lg bg-slate-950/45 p-3">
+            <span className="text-xs text-slate-500">天气扣分</span>
+            <strong className="block text-slate-50">-{score.weatherPenalty}</strong>
+          </div>
+          <div className="rounded-lg bg-slate-950/45 p-3">
+            <span className="text-xs text-slate-500">跑道冲出</span>
+            <strong className={score.runwayOverrun ? "block text-red-200" : "block text-slate-50"}>
+              {score.runwayOverrun ? "是" : "否"}
+            </strong>
+          </div>
         </div>
 
         <div className="mt-6 grid gap-3 sm:grid-cols-3">

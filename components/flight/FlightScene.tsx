@@ -13,6 +13,7 @@ import type {
   QualitySetting,
   ViewMode
 } from "@/types/flight";
+import { getAirportGameplayProfile } from "@/lib/airportGameplay";
 import { useAircraftPhysics } from "@/hooks/useAircraftPhysics";
 import { AircraftModel } from "@/components/flight/AircraftModel";
 import { AirportScene } from "@/components/flight/AirportScene";
@@ -64,6 +65,7 @@ function FlightSceneComponent({
   const resolvedQuality = resolveQuality(quality);
   const shadowsEnabled = resolvedQuality === "high";
   const dpr: number | [number, number] = resolvedQuality === "high" ? [1, 1.35] : resolvedQuality === "medium" ? 1 : 0.9;
+  const airportProfile = getAirportGameplayProfile(airport, aircraft);
 
   return (
     <Canvas
@@ -74,9 +76,9 @@ function FlightSceneComponent({
       performance={{ min: 0.65 }}
     >
       <color attach="background" args={["#07111F"]} />
-      <fog attach="fog" args={["#07111F", 900, 8200]} />
-      <ambientLight intensity={0.52} />
-      <directionalLight position={[260, 540, -360]} intensity={1.15} castShadow={shadowsEnabled} />
+      <fog attach="fog" args={["#07111F", airportProfile.fogNear, airportProfile.fogFar]} />
+      <ambientLight intensity={airport.visibility < 7 ? 0.44 : 0.52} />
+      <directionalLight position={[260, 540, -360]} intensity={airport.visibility < 7 ? 0.92 : 1.15} castShadow={shadowsEnabled} />
       <hemisphereLight args={["#7dd3fc", "#0f172a", 0.72]} />
       <PhysicsLoop
         aircraft={aircraft}
@@ -91,7 +93,7 @@ function FlightSceneComponent({
       <CityScape airport={airport} quality={resolvedQuality} />
       <Runway airport={airport} quality={resolvedQuality} />
       <AirportScene airport={airport} />
-      <Clouds quality={resolvedQuality} />
+      <Clouds airport={airport} quality={resolvedQuality} />
       <AircraftModel aircraft={aircraft} stateRef={stateRef} />
       <FlightEffects stateRef={stateRef} />
       <CameraSystem stateRef={stateRef} viewMode={viewMode} />
