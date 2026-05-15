@@ -49,10 +49,24 @@ export function AircraftModel({ aircraft, stateRef }: AircraftModelProps) {
 
   return (
     <group ref={groupRef} scale={scale}>
-      <mesh castShadow>
+      <mesh rotation={[Math.PI / 2, 0, 0]} castShadow>
         <capsuleGeometry args={[0.48, 5.4, 8, 18]} />
         <meshStandardMaterial color={colors.main} roughness={0.48} metalness={0.18} />
       </mesh>
+
+      <mesh position={[0, 0.53, 0.2]} castShadow>
+        <boxGeometry args={[0.16, 0.04, 4.4]} />
+        <meshStandardMaterial color={colors.accent} emissive={colors.accent} emissiveIntensity={0.16} roughness={0.32} />
+      </mesh>
+      <mesh position={[0, 0.56, 1.55]} scale={[0.62, 0.24, 0.92]} castShadow>
+        <sphereGeometry args={[1, 18, 12]} />
+        <meshStandardMaterial color="#0f172a" emissive="#38bdf8" emissiveIntensity={0.18} metalness={0.25} roughness={0.18} />
+      </mesh>
+      <mesh position={[0, 0.42, 2.2]} scale={[0.48, 0.12, 0.32]} castShadow>
+        <sphereGeometry args={[1, 16, 8]} />
+        <meshStandardMaterial color="#bae6fd" emissive="#7dd3fc" emissiveIntensity={0.2} transparent opacity={0.72} roughness={0.12} />
+      </mesh>
+
       <mesh position={[0, 0.06, 1.2]} castShadow>
         <boxGeometry args={[8.2, 0.12, 0.72]} />
         <meshStandardMaterial color={colors.main} roughness={0.46} metalness={0.14} />
@@ -69,9 +83,22 @@ export function AircraftModel({ aircraft, stateRef }: AircraftModelProps) {
         <boxGeometry args={[0.16, 1.6, 0.82]} />
         <meshStandardMaterial color={colors.accent} roughness={0.42} />
       </mesh>
-      <mesh position={[0, 0.18, 3.05]} castShadow>
+      <mesh position={[0, 0.98, -3.04]} rotation={[0.32, 0, 0]} castShadow>
+        <boxGeometry args={[0.18, 0.98, 0.08]} />
+        <meshStandardMaterial color="#f8fafc" emissive="#f8fafc" emissiveIntensity={0.08} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 0.08, -3.12]} rotation={[-Math.PI / 2, 0, 0]} castShadow>
+        <coneGeometry args={[0.34, 0.72, 20]} />
+        <meshStandardMaterial color={colors.main} roughness={0.46} metalness={0.12} />
+      </mesh>
+
+      <mesh position={[0, 0.18, 3.08]} rotation={[Math.PI / 2, 0, 0]} castShadow>
         <coneGeometry args={[0.48, 1.1, 24]} />
         <meshStandardMaterial color={colors.accent} roughness={0.36} metalness={0.2} />
+      </mesh>
+      <mesh position={[0, 0.18, 3.68]} castShadow>
+        <sphereGeometry args={[0.18, 18, 12]} />
+        <meshStandardMaterial color="#f8fafc" emissive={colors.accent} emissiveIntensity={0.22} roughness={0.24} />
       </mesh>
       {isPropeller ? (
         <mesh ref={propellerRef} position={[0, 0.18, 3.68]}>
@@ -102,8 +129,26 @@ export function AircraftModel({ aircraft, stateRef }: AircraftModelProps) {
         <cylinderGeometry args={[0.12, 0.12, 0.18, 12]} />
         <meshStandardMaterial color="#020617" />
       </mesh>
+
+      <mesh position={[-4.2, 0.12, 1.2]}>
+        <sphereGeometry args={[0.11, 12, 8]} />
+        <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={1.2} />
+      </mesh>
+      <mesh position={[4.2, 0.12, 1.2]}>
+        <sphereGeometry args={[0.11, 12, 8]} />
+        <meshStandardMaterial color="#22c55e" emissive="#22c55e" emissiveIntensity={1.2} />
+      </mesh>
+      <mesh position={[0, 0.18, -3.54]}>
+        <sphereGeometry args={[0.1, 12, 8]} />
+        <meshStandardMaterial color="#f97316" emissive="#f97316" emissiveIntensity={1.1} />
+      </mesh>
+      <mesh position={[0, 0.2, 3.98]}>
+        <sphereGeometry args={[0.09, 12, 8]} />
+        <meshStandardMaterial color="#e0f2fe" emissive="#e0f2fe" emissiveIntensity={1.25} />
+      </mesh>
       <pointLight position={[-4.35, 0.1, 1.2]} color="#ef4444" intensity={0.8} distance={14} />
       <pointLight position={[4.35, 0.1, 1.2]} color="#22c55e" intensity={0.8} distance={14} />
+      <pointLight position={[0, 0.2, 3.98]} color="#e0f2fe" intensity={0.55} distance={18} />
     </group>
   );
 }
